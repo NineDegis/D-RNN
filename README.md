@@ -1,2 +1,10 @@
 # D-RNN
-a repository for sharing developmental recursive neural network knowledge among team members
+RNN, LSTM 등 졸업작품 진행에 있어서 필요한 내용을 각자 공부한 뒤 정리하여 업로드합니다.
+
+
+
+### 업로드 방식
+
+* 공부하다 내용이 심하게 갈라진다 싶으면 적당히 파일을 분할하고 파일들간 공통적인 주제가 있으면 디렉토리로 묶어줍시다.
+* 파일 이름은 `주제-uploader.md`로 올립니다. ex) RNN-sejin.md
+
