@@ -61,3 +61,6 @@ fabric.properties
 
 # Editor-based Rest Client
 .idea/httpRequests
+
+# Ignore py cache.
+__pycache__/
