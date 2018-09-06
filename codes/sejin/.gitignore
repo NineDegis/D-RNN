@@ -197,5 +197,7 @@ venv.bak/
 pyvenv.cfg
 pip-selfcheck.json
 
-
 # End of https://www.gitignore.io/api/python,pycharm+all
+
+/data
+tests.py
