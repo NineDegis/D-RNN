@@ -2,10 +2,37 @@ import torch
 from torchvision import datasets, transforms
 
 
-class MNIST(object):
-    @staticmethod
-    def load(is_eval, batch_size, use_cuda):
-        additional_options = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+class BaseData(object):
+    """ Base class of the data model.
+
+    All of data classes for network model should implement both eval_data and training_data.
+    """
+    def __init__(self):
+        pass
+
+    def eval_data(self):
+        """ Return data for network model to evaluate.
+
+        :return: Data sets for evaluation.
+        """
+        raise NotImplementedError("[-] Function 'eval_data' not implemented at " + self.__class__.__name__)
+
+    def training_data(self):
+        """ Return data for network model to training.
+
+        :return: Data sets for training.
+        """
+        raise NotImplementedError("[-] Function 'training_data' not implemented at " + self.__class__.__name__)
+
+
+class MNIST(BaseData):
+    def __init__(self, batch_size):
+        BaseData.__init__(self)
+        self.batch_size = batch_size
+        self.cuda = torch.cuda.is_available()
+
+    def load(self, is_eval):
+        additional_options = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
         return torch.utils.data.DataLoader(
             datasets.MNIST(root='data/mnist',
                            train=not is_eval,
@@ -14,6 +41,12 @@ class MNIST(object):
                                transforms.ToTensor(),
                                transforms.Normalize((0.1307,), (0.3081,))
                            ])),
-            batch_size=batch_size,
+            batch_size=self.batch_size,
             shuffle=True,
             **additional_options)
+
+    def eval_data(self):
+        return self.load(False)
+
+    def training_data(self):
+        return self.load(True)
