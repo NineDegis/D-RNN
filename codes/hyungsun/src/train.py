@@ -55,10 +55,10 @@ class Trainer(object):
                 loss.backward()
                 self.optimizer.step()
                 if batch_idx % 100 == 0:
-                    self.save_checkpoint()
                     print("Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                         max_epoch, batch_idx * len(data), len(self.data_loader.dataset),
                                    100. * batch_idx / len(self.data_loader), loss.item()))
+                    self.save_checkpoint()
         self.save_checkpoint()
 
     def evaluate(self):
@@ -71,8 +71,8 @@ class Trainer(object):
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
                 test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
-                pred = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
-                correct += pred.eq(target.view_as(pred)).sum().item()
+                prediction = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
+                correct += prediction.eq(target.view_as(prediction)).sum().item()
 
         test_loss /= len(self.data_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
@@ -89,7 +89,7 @@ def train_cnn():
     trainer.train(5)
 
 
-def train_eval():
+def eval_cnn():
     model = CNN()
     config = ConfigManager(model).load()
     optimizer = optim.SGD(model.parameters(), lr=float(config["LEARNING_RATE"]), momentum=float(config["MOMENTUM"]))
@@ -97,8 +97,9 @@ def train_eval():
     trainer = Trainer(model, MNIST(batch_size=10), optimizer, criterion, True)
     trainer.evaluate()
 
+
 def main():
-    train_cnn()
+    eval_cnn()
 
 
 if __name__ == "__main__":
