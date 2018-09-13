@@ -28,4 +28,3 @@ __pycache__/
 
 # Ignore backup files.
 data/
-checkpoints/

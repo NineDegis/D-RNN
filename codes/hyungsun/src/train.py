@@ -99,7 +99,7 @@ def eval_cnn():
 
 
 def main():
-    eval_cnn()
+    train_cnn()
 
 
 if __name__ == "__main__":
