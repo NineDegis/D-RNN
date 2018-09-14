@@ -7,6 +7,7 @@ class BaseData(object):
 
     All of data classes for network model should implement both eval_data and training_data.
     """
+
     def __init__(self):
         pass
 
@@ -17,12 +18,12 @@ class BaseData(object):
         """
         raise NotImplementedError("[-] Function 'eval_data' not implemented at " + self.__class__.__name__)
 
-    def training_data(self):
-        """ Return data for network model to training.
+    def train_data(self):
+        """ Return data for network model to train.
 
         :return: Data sets for training.
         """
-        raise NotImplementedError("[-] Function 'training_data' not implemented at " + self.__class__.__name__)
+        raise NotImplementedError("[-] Function 'train_data' not implemented at " + self.__class__.__name__)
 
 
 class MNIST(BaseData):
@@ -46,7 +47,32 @@ class MNIST(BaseData):
             **additional_options)
 
     def eval_data(self):
+        return self.load(True)
+
+    def train_data(self):
         return self.load(False)
 
-    def training_data(self):
-        return self.load(True)
+
+class Reviews(BaseData):
+    root = 'data/reviews/'
+    train_file = 'train.txt'
+    eval_file = 'eval.text'
+
+    def __init__(self, batch_size):
+        # TODO(Sejin): Implement.
+        BaseData.__init__(self)
+        self.batch_size = batch_size
+        self.cuda = torch.cuda.is_available()
+
+
+
+    def load(self, is_eval):
+
+
+    def eval_data(self):
+        pass
+
+    def train_data(self):
+        pass
+
+
