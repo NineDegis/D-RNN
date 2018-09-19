@@ -1,10 +1,17 @@
 # D-RNN
-RNN, LSTM 등 졸업작품 진행에 있어서 필요한 내용을 각자 공부한 뒤 정리하여 업로드합니다.
+RNN model incorporating Development process
 
+## 1. Dataset
+This dataset contains movie reviews along with their associated binary
+sentiment polarity labels.  
 
+### 1.1 Data organization  
+The dataset contains 50,000 reviews split evenly into 25000 train
+and 25000 test sets. Dataset also include an additional 50,000 unlabeled
+documents for unsupervised learning.  
 
-### 업로드 방식
+### 1.2 Download  
+> http://ai.stanford.edu/~amaas/data/sentiment/  
 
-* 공부하다 내용이 심하게 갈라진다 싶으면 적당히 파일을 분할하고 파일들간 공통적인 주제가 있으면 디렉토리로 묶어줍시다.
-* 파일 이름은 `주제-uploader.md`로 올립니다. ex) RNN-sejin.md
-
+### 1.3 Publications Using the Dataset  
+> http://ai.stanford.edu/~amaas/papers/wvSent_acl2011.pdf
