@@ -13,7 +13,7 @@ class Trainer(object):
     def __init__(self, model, data_loader, optimizer, criterion, is_eval):
         cuda = torch.cuda.is_available()
         self.model = model
-        self.data_loader = data_loader.eval_data() if is_eval else data_loader.training_data()
+        self.data_loader = data_loader.eval_data() if is_eval else data_loader.train_data()
         self.device = torch.device("cuda" if cuda else "cpu")
         self.optimizer = optimizer
         self.prefix = "checkpoints/" + model.__class__.__name__ + "_"
