@@ -11,7 +11,7 @@ and 25000 test sets. Dataset also include an additional 50,000 unlabeled
 documents for unsupervised learning.  
 
 ### 1.2 Download  
-> http://ai.stanford.edu/~amaas/data/sentiment/  
+> http://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz  
 
 ### 1.3 Publications Using the Dataset  
 > http://ai.stanford.edu/~amaas/papers/wvSent_acl2011.pdf
