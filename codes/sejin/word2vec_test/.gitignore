@@ -1,2 +1,5 @@
 # Ignore learning data
 data/
+
+# Ignore word2vec files
+*.wv
