@@ -64,6 +64,7 @@ class ACLIMDB(BaseData):
         self.batch_size = batch_size
 
     def load(self, is_eval):
+        print("[+] Loading data model: " + self.__class__.__name__)
         additional_options = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
         return torch.utils.data.DataLoader(
             Imdb(root=self.root, train=not is_eval),
@@ -80,6 +81,6 @@ class ACLIMDB(BaseData):
 
 if __name__ == "__main__":
     # TODO(hyungsun): Remove these after debugging.
-    loader = ACLIMDB(10).load(False)
+    loader = ACLIMDB(15).load(False)
     for batch_idx, (data, target) in enumerate(loader):
-        print(batch_idx, data.shape)
+        print(batch_idx, target.shape, data.shape)

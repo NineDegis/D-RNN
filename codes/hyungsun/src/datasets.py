@@ -65,16 +65,20 @@ class Imdb(data.Dataset):
                 size = len(dictionary)
                 for line in f.readlines():
                     bow = line.split()
-                    grades.append(int(bow[0]))
+                    if int(bow[0]) > 5:
+                        grades.append([1, 0])
+                    else:
+                        grades.append([0, 1])
                     vector = [0] * size
                     for token in bow[1:]:
                         token = token.split(":")
                         vector[int(token[0])] = int(token[1])
                     vectors.append(vector)
             if mode == 'train':
-                training_set = (torch.tensor(vectors, dtype=torch.long), torch.Tensor(grades))
+
+                training_set = (torch.LongTensor(vectors), torch.LongTensor(grades))
             else:
-                test_set = (torch.tensor(vectors, dtype=torch.long), torch.Tensor(grades))
+                test_set = (torch.LongTensor(vectors), torch.LongTensor(grades))
         try:
             os.mkdir(os.path.join(self.root, self.processed_folder))
         except FileExistsError:
