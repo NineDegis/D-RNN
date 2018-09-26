@@ -32,11 +32,11 @@ class RnnImdb(nn.Module):
     def __init__(self):
         super(RnnImdb, self).__init__()
         config = ConfigManager(self.__class__.__name__).load()
-        self.hidden_size = config['HIDDEN_SIZE']
-        self.embed_size = config["EMBED_SIZE"]
+        self.hidden_size = int(config['HIDDEN_SIZE'])
+        self.embed_size = int(config["EMBED_SIZE"])
         self.bi_direction = config['BI_DIRECTION']
-        self.vocab_size = config["VOCAB_SIZE"]
-        self.output_size = config["OUTPUT_SIZE"]
+        self.vocab_size = int(config["VOCAB_SIZE"])
+        self.output_size = int(config["OUTPUT_SIZE"])
         if self.bi_direction:
             self.num_directions = 2
         else:
