@@ -1,24 +1,23 @@
-"""
-    Model & Training configurations controller.
-
-    Usage :
-        model = CNN()
-        config = Config().load(model)
-        learning_rate = config["LEARNING_RATE"]
-"""
 import configparser
-
-CONFIG_FILE_NAME = "config/config.ini"
-DEFAULT_SECTION = "DEFAULT"
 
 
 class ConfigManager(object):
-    def __init__(self, model):
+    """Model & Training configurations controller.
+
+        Usage :
+            model = CNN()
+            config = Config().load(model)
+            learning_rate = config["LEARNING_RATE"]
+    """
+    CONFIG_FILE_NAME = "config/config.ini"
+    DEFAULT_SECTION = "DEFAULT"
+
+    def __init__(self, section):
         self.config = configparser.ConfigParser()
-        if len(self.config.read(CONFIG_FILE_NAME)) == 0:
-            raise FileNotFoundError("File '{}' does not exist.".format(CONFIG_FILE_NAME))
-        self.model_name = model.__class__.__name__
+        if len(self.config.read(self.CONFIG_FILE_NAME)) == 0:
+            raise FileNotFoundError("File '{}' does not exist.".format(self.CONFIG_FILE_NAME))
+        self.section = section
 
     def load(self):
-        section = self.model_name if self.config.has_section(self.model_name) else DEFAULT_SECTION
+        section = self.section if self.config.has_section(self.section) else self.DEFAULT_SECTION
         return self.config[section]
