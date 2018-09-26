@@ -1,14 +1,13 @@
 import torch
 import torch.optim as optim
-import torch.nn.functional as F
 import time
-from data import MNIST
-from model import CNN
+from data import *
+from model import *
 from config import *
 import glob
 
 
-# TODO(hyungsun): Make this more general.
+# TODO(hyungsun): Make this class more general.
 class Trainer(object):
     def __init__(self, model, data_loader, optimizer, criterion, is_eval):
         cuda = torch.cuda.is_available()
@@ -57,7 +56,7 @@ class Trainer(object):
                 if batch_idx % 100 == 0:
                     print("Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                         max_epoch, batch_idx * len(data), len(self.data_loader.dataset),
-                                   100. * batch_idx / len(self.data_loader), loss.item()))
+                        100. * batch_idx / len(self.data_loader), loss.item()))
                     self.save_checkpoint()
         self.save_checkpoint()
 
@@ -81,8 +80,8 @@ class Trainer(object):
 
 
 def train_cnn():
-    model = CNN()
-    config = ConfigManager(model).load()
+    model = Cnn()
+    config = ConfigManager(model.__class__.__name__).load()
     optimizer = optim.SGD(model.parameters(), lr=float(config["LEARNING_RATE"]), momentum=float(config["MOMENTUM"]))
     criterion = torch.nn.NLLLoss()
     trainer = Trainer(model, MNIST(batch_size=10), optimizer, criterion, True)
@@ -90,16 +89,26 @@ def train_cnn():
 
 
 def eval_cnn():
-    model = CNN()
-    config = ConfigManager(model).load()
+    model = Cnn()
+    config = ConfigManager(model.__class__.__name__).load()
     optimizer = optim.SGD(model.parameters(), lr=float(config["LEARNING_RATE"]), momentum=float(config["MOMENTUM"]))
     criterion = torch.nn.NLLLoss()
     trainer = Trainer(model, MNIST(batch_size=10), optimizer, criterion, True)
     trainer.evaluate()
 
 
+def train_rnn_imdb():
+    # TODO(hyungsun): Verify this.
+    config = ConfigManager(RnnImdb.__class__.__name__).load()
+    model = RnnImdb()
+    optimizer = optim.Adam(model.parameters(), lr=float(config["LEARNING_RATE"]))
+    criterion = torch.nn.CrossEntropyLoss()
+    trainer = Trainer(model, ACLIMDB(batch_size=10), optimizer, criterion, True)
+    trainer.train(5)
+
+
 def main():
-    train_cnn()
+    train_rnn_imdb()
 
 
 if __name__ == "__main__":

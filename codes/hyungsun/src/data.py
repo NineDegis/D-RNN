@@ -1,5 +1,7 @@
 import torch
 from torchvision import datasets, transforms
+import torch.utils.data as data
+from datasets import Imdb
 
 
 class BaseData(object):
@@ -9,7 +11,7 @@ class BaseData(object):
     """
 
     def __init__(self):
-        pass
+        self.cuda = torch.cuda.is_available()
 
     def eval_data(self):
         """ Return data for network model to evaluate.
@@ -27,15 +29,16 @@ class BaseData(object):
 
 
 class MNIST(BaseData):
+    root = 'data/mnist'
+
     def __init__(self, batch_size):
         BaseData.__init__(self)
         self.batch_size = batch_size
-        self.cuda = torch.cuda.is_available()
 
     def load(self, is_eval):
         additional_options = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
         return torch.utils.data.DataLoader(
-            datasets.MNIST(root='data/mnist',
+            datasets.MNIST(root=self.root,
                            train=not is_eval,
                            download=True,
                            transform=transforms.Compose([
@@ -53,26 +56,30 @@ class MNIST(BaseData):
         return self.load(False)
 
 
-class Reviews(BaseData):
-    root = 'data/reviews/'
-    train_file = 'train.txt'
-    eval_file = 'eval.text'
+class ACLIMDB(BaseData):
+    root = 'data/aclImdb/'
 
     def __init__(self, batch_size):
-        # TODO(Sejin): Implement.
         BaseData.__init__(self)
         self.batch_size = batch_size
-        self.cuda = torch.cuda.is_available()
-
-
 
     def load(self, is_eval):
-
+        additional_options = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
+        return torch.utils.data.DataLoader(
+            Imdb(root=self.root, train=not is_eval),
+            batch_size=self.batch_size,
+            shuffle=True,
+            **additional_options)
 
     def eval_data(self):
-        pass
+        return self.load(True)
 
     def train_data(self):
-        pass
+        return self.load(False)
 
 
+if __name__ == "__main__":
+    # TODO(hyungsun): Remove these after debugging.
+    loader = ACLIMDB(10).load(False)
+    for batch_idx, (data, target) in enumerate(loader):
+        print(batch_idx, data.shape)
