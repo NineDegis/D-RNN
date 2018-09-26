@@ -117,5 +117,16 @@ def main():
     train_rnn_imdb()
 
 
+def open_debug_shell():
+    """Open embedded interactive shell.
+
+    Use this when you want to open shell to print or interact with variables in runtime.
+    """
+    variables = globals().copy()
+    variables.update(locals())
+    shell = code.InteractiveConsole(variables)
+    shell.interact()
+
+
 if __name__ == "__main__":
     main()

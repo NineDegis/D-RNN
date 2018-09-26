@@ -5,8 +5,9 @@ class ConfigManager(object):
     """Model & Training configurations controller.
 
         Usage :
-            model = CNN()
-            config = Config().load(model)
+            model = Cnn()
+            section = model.__class__.__name__
+            config = Config().load(section)
             learning_rate = config["LEARNING_RATE"]
     """
     CONFIG_FILE_NAME = "config/config.ini"
