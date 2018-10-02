@@ -5,7 +5,7 @@ from model import *
 from config import *
 import glob
 import code
-
+from logger import *
 
 # TODO(hyungsun): Make this class more general.
 class Trainer(object):
@@ -19,6 +19,7 @@ class Trainer(object):
         self.default_filename = self.prefix + str(int(time.time())) + ".pt"
         self.current_epoch = 0
         self.criterion = criterion
+        self.logger = Logger('./logs',len(self.data_loader))
         
     def save_checkpoint(self):
         checkpoint = {
@@ -59,11 +60,25 @@ class Trainer(object):
                 loss = self.criterion(output, target)
                 loss.backward()
                 self.optimizer.step()
+
+                # Compute Accuracy
+                _, argmax = torch.max(output,1)
+                accuracy = (target == argmax.squeeze()).float().mean()
+                self.logger.add_accuracy_and_loss(accuracy, loss)
+
                 if batch_idx % 100 == 0:
                     print("Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                         max_epoch, batch_idx * len(data), len(self.data_loader.dataset),
                         100. * batch_idx / len(self.data_loader), loss.item()))
                     self.save_checkpoint()
+
+            # ====== Logging ===== #
+
+            # 1. logging for scalar
+            self.logger.log_scalar(self.current_epoch)
+            # 2. Log values and gradients of the parameters (histogram summary)
+            self.logger.log_histogram(self.model.named_parameters(), self.current_epoch)
+
         self.save_checkpoint()
 
     def evaluate(self):
@@ -114,8 +129,8 @@ def train_rnn_imdb():
 
 
 def main():
-    train_rnn_imdb()
-
+    # train_rnn_imdb()
+    train_cnn()
 
 def open_debug_shell():
     """Open embedded interactive shell.
