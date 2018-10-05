@@ -66,7 +66,7 @@ class ACLIMDB(BaseData):
     def load(self, is_eval):
         additional_options = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
         return torch.utils.data.DataLoader(
-            Imdb(root=self.root, train=not is_eval),
+            Imdb(root=self.root, word_embedding='CBOW', train=not is_eval),
             batch_size=self.batch_size,
             shuffle=True,
             **additional_options)
