@@ -59,14 +59,16 @@ class MNIST(BaseData):
 class ACLIMDB(BaseData):
     root = 'data/aclImdb/'
 
-    def __init__(self, batch_size):
+    def __init__(self, batch_size, word_embedding):
         BaseData.__init__(self)
         self.batch_size = batch_size
+        self.word_embedding = word_embedding
 
     def load(self, is_eval):
         additional_options = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
+        # TODO(hyungsun): make this class adapt word embedding dynamically.
         return torch.utils.data.DataLoader(
-            Imdb(root=self.root, word_embedding='CBOW', train=not is_eval),
+            Imdb(root=self.root, word_embedding=self.word_embedding, train=not is_eval),
             batch_size=self.batch_size,
             shuffle=True,
             **additional_options)
@@ -80,6 +82,6 @@ class ACLIMDB(BaseData):
 
 if __name__ == "__main__":
     # TODO(hyungsun): Remove these after debugging.
-    loader = ACLIMDB(10).load(False)
+    loader = ACLIMDB(10, 'CBOW').load(False)
     for batch_idx, (data, target) in enumerate(loader):
         print(batch_idx, data.shape)

@@ -1,10 +1,8 @@
 import os
-
+import sys
 import torch
 import torch.utils.data as data
 from gensim.models import word2vec
-import nltk
-from nltk import word_tokenize
 
 
 class Imdb(data.Dataset):
@@ -62,7 +60,8 @@ class Imdb(data.Dataset):
             vector, target = self.test_data[index], self.test_labels[index]
         return vector, target
 
-    def rectangularize(self, nested_list, fill=0):
+    @staticmethod
+    def rectangularize(nested_list, fill=0):
         """Make a given nested list in the form of a rectangle"""
         max_len = len(max(nested_list, key=len))
         for flat in nested_list:
@@ -81,7 +80,6 @@ class Imdb(data.Dataset):
         """
         extracted_words = {}
         for mode in ['train', 'test']:
-            sentences_in_mode = []
             for classification in ['pos', 'neg', 'unsup']:
                 path = os.path.join(self.root, mode, classification)
                 try:
@@ -98,27 +96,21 @@ class Imdb(data.Dataset):
 
         :param word_embedding: A string that nominates which method of word embedding algorithms would be used.
         """
-        supportable_word_embeddings = {
-            'name': ['BOW', 'CBOW', 'skip-gram'],
-            'value': [None, 0, 1],
-        }
-        if word_embedding not in supportable_word_embeddings['name']:
-            print(word_embedding, "is not supported.")
-            print("You can use", supportable_word_embeddings['name'], "as a word embedding algorithm.")
-            return
-
         print("Processing...")
-        if word_embedding == supportable_word_embeddings['name'][0]:
-            training_set, test_set = self.pre_process_sparse()
+        if word_embedding == 'BOW':
+            training_set, test_set = self.pre_process_bow()
+        elif word_embedding == 'CBOW':
+            training_set, test_set = self.pre_process_cbow()
+        elif word_embedding == 'SKIP_GRAM':
+            training_set, test_set = self.pre_process_skip_gram()
         else:
-            word_embedding_name_idx = supportable_word_embeddings['name'].index(word_embedding)
-            word_embedding_no = supportable_word_embeddings['value'][word_embedding_name_idx]
-            training_set, test_set = self.pre_process_dense(word_embedding_no)
+            print(word_embedding, "is not supported.")
+            return
 
         self.save_processing_cache(training_set, test_set)
         print("Done.")
 
-    def pre_process_sparse(self):
+    def pre_process_bow(self):
         """
         Pre-processing with BOW.
 
@@ -145,27 +137,39 @@ class Imdb(data.Dataset):
                 test_set = (torch.tensor(vectors, dtype=torch.long), torch.tensor(grades))
         return training_set, test_set
 
-    def pre_process_dense(self, word_embedding_no):
-        """Pre-processing with dense-represented bow which is produced by word2vec
-
-        :param word_embedding_no: 0 for CBOW, 1 for skip-gram.
-        :return: A 2-length tuple. It is consisted of word vectors and grades.
-        """
+    def pre_process_cbow(self):
         extracted_words = self.extract_words()
-        word_vector = word2vec.Word2Vec(
-            # word2vec_bow['train']['vectors'] + word2vec_bow['test']['vectors'],
+        model = word2vec.Word2Vec(
             extracted_words['train'] + extracted_words['test'],
             size=self.embedding_dimension,
             window=self.window_size,
             min_count=self.min_count,
             workers=self.num_workers,
             iter=self.iter,
-            sg=word_embedding_no,
-        )
-        dense_bow = word_vector.wv  # vectors of words
-        del word_vector
+            sg=0,
+        ).wv
+        return self.pre_process_dense(model.wv)
 
-        print(len(dense_bow.index2entity))
+    def pre_process_skip_gram(self):
+        extracted_words = self.extract_words()
+        model = word2vec.Word2Vec(
+            extracted_words['train'] + extracted_words['test'],
+            size=self.embedding_dimension,
+            window=self.window_size,
+            min_count=self.min_count,
+            workers=self.num_workers,
+            iter=self.iter,
+            sg=1,
+        )
+        return self.pre_process_dense(model.wv)
+
+    def pre_process_dense(self, word_vector):
+        """Pre-processing with dense-represented bow which is produced by word2vec
+
+        :param word_vector:
+        :return: A 2-length tuple. It is consisted of word vectors and grades.
+        """
+        print(len(word_vector.index2entity))
         training_set, test_set = None, None
         for mode in ['train', 'test']:
             grades, vectors = [], []
@@ -179,15 +183,13 @@ class Imdb(data.Dataset):
                         word_vectors = []
                         for idx, word in enumerate(list(words)[0]):
                             try:
-                                word_vectors.append(dense_bow.get_vector(word))
+                                word_vectors.append(word_vector.get_vector(word))
                             except KeyError:
                                 # print('An excluded word:', word)
                                 pass
                         vectors.append(word_vectors)
             vectors = self.rectangularize(vectors, 0)
-            print(len(vectors))
-            print(len(vectors[0]), len(vectors[1]), len(vectors[2]))
-            print(len(grades))
+            print(sys.getsizeof(vectors))
             if mode == 'train':
                 training_set = torch.tensor(vectors, dtype=torch.long), torch.tensor(grades)
             else:
