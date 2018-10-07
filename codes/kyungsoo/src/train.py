@@ -51,6 +51,7 @@ class Trainer(object):
             self.current_epoch = max_epoch
             loss_sum = 0
             accuracy_sum = 0
+
             for batch_idx, (data, target) in enumerate(self.data_loader):
                 data, target = data.to(self.device), target.to(self.device)
                 self.optimizer.zero_grad()
@@ -58,13 +59,12 @@ class Trainer(object):
                 loss = self.criterion(output, target)
                 loss.backward()
                 self.optimizer.step()
-                _, argmax = torch.max(output,1)
-
                 # Compute Accuracy
-
+                _, argmax = torch.max(output,1)
                 accuracy = (target == argmax.squeeze()).float().mean()
                 accuracy_sum += accuracy.item()
                 loss_sum += loss.item()
+
                 if batch_idx % 100 == 0:
                     print("Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f} Acc:{:0.6f}".format(
                         max_epoch, batch_idx * len(data), len(self.data_loader.dataset),
@@ -72,21 +72,12 @@ class Trainer(object):
                     self.save_checkpoint()
 
             # ====== Logging ===== #
-
             loss_avg = loss_sum / len(self.data_loader)
             accuracy_avg = accuracy_sum / len(self.data_loader)
-            print("loss avg : {:.6f} , acc avg : {:.2f}".format(loss_avg, accuracy_avg))
-
             # 1. logging for scalar
-            info = {"loss": loss_avg, "accuracy": accuracy_avg}
-            for tag, value in info.items():
-                self.logger.scalar_summary(tag, value, max_epoch + 1)
-
+            self.logger.add_scalar(loss_avg, accuracy_avg, max_epoch)
             # 2. Log values and gradients of the parameters (histogram summary)
-            for tag, value in self.model.named_parameters():
-                tag = tag.replace('.', '/')
-                self.logger.histo_summary(tag, value.data.cpu().numpy(), max_epoch + 1)
-                self.logger.histo_summary(tag + '/grad', value.grad.data.cpu().numpy(), max_epoch + 1)
+            self.logger.add_histogram(self.model.named_parameters(), max_epoch)
 
         self.save_checkpoint()
 
@@ -115,7 +106,7 @@ def train_cnn():
     optimizer = optim.SGD(model.parameters(), lr=float(config["LEARNING_RATE"]), momentum=float(config["MOMENTUM"]))
     criterion = torch.nn.NLLLoss()
     trainer = Trainer(model, MNIST(batch_size=10), optimizer, criterion, True)
-    trainer.train(10)
+    trainer.train(1)
 
 
 def eval_cnn():

@@ -6,3 +6,13 @@
 # How to train.
 
     $ python3 train.py
+
+
+
+# How to run Tensorboard
+
+```
+$ tensorboard --logdir="log-folder-path" [--port="port-number"]
+```
+
+
