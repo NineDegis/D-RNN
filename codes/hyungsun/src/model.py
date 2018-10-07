@@ -25,12 +25,6 @@ class Cnn(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
 
-    def get_accuracy(self, target, output):
-        # Compute Accuracy
-        _, argmax = torch.max(output, 1)
-        accuracy = (target == argmax.squeeze()).float().mean()
-        return accuracy
-
 
 class RnnImdb(nn.Module):
     """TODO(hyungsun): Let model classes have optimizer and loss function.

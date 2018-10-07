@@ -5,7 +5,7 @@ from model import *
 import glob
 import code
 from config import *
-from logger import *
+from tensorBoardLogger import *
 
 
 # TODO(hyungsun): Make this class more general.
@@ -65,7 +65,7 @@ class Trainer(object):
                 loss.backward()
                 self.optimizer.step()
 
-                accuracy = self.model.get_accuracy(target, output)
+                accuracy = self.get_accuracy(target, output)
                 accuracy_sum += accuracy
                 loss_sum += loss
 
@@ -99,7 +99,11 @@ class Trainer(object):
             test_loss, correct, len(self.data_loader.dataset),
             100. * correct / len(self.data_loader.dataset)))
 
-
+    @staticmethod
+    def get_accuracy(target, output):
+        _, argmax = torch.max(output, 1)
+        accuracy = (target == argmax.squeeze()).float().mean()
+        return accuracy
 
 
 def train_cnn():
@@ -131,7 +135,6 @@ def train_rnn_imdb():
 
 
 def main():
-    train_cnn()
     pass
 
 def open_debug_shell():
