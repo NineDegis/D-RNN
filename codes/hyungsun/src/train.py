@@ -4,6 +4,7 @@ from data import *
 from model import *
 from config import *
 import glob
+import code
 
 
 # TODO(hyungsun): Make this class more general.
@@ -41,7 +42,9 @@ class Trainer(object):
         return True
 
     def train(self, max_epoch):
+        print("[+] Start training.")
         self.model.train()
+        print("[+] Load Checkpoint if possible.")
         self.load_checkpoint()
         for max_epoch in range(1, max_epoch + 1):
             self.current_epoch = max_epoch
@@ -49,6 +52,10 @@ class Trainer(object):
                 data, target = data.to(self.device), target.to(self.device)
                 self.optimizer.zero_grad()
                 output = self.model(data)
+                # variables = globals().copy()
+                # variables.update(locals())
+                # shell = code.InteractiveConsole(variables)
+                # shell.interact()
                 loss = self.criterion(output, target)
                 loss.backward()
                 self.optimizer.step()
@@ -68,7 +75,7 @@ class Trainer(object):
             for data, target in self.data_loader:
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
-                test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+                test_loss += self.criterion(output, target, reduction='sum').item()  # sum up batch loss
                 prediction = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
                 correct += prediction.eq(target.view_as(prediction)).sum().item()
 

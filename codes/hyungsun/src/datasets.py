@@ -33,7 +33,6 @@ class Imdb(data.Dataset):
         self.root = os.path.expanduser(root)
         self.train = train  # training set or test set
         self.max_num_words = 0  # To make a 2-dimensional tensor with an uneven list of vectors
-
         if not self._check_exists():
             self.download()
 

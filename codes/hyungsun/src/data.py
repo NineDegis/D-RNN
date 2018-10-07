@@ -60,3 +60,5 @@ class ACLIMDB(BaseData):
 if __name__ == "__main__":
     # TODO(hyungsun): Remove these after debugging.
     loader = ACLIMDB(10, 'CBOW', False).load()
+    for batch_idx, (data, target) in enumerate(loader):
+        print(batch_idx)
