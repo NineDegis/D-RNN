@@ -29,12 +29,12 @@ class Cnn(nn.Module):
 class RnnImdb(nn.Module):
     """TODO(hyungsun): Let model classes have optimizer and loss function.
     """
-    def __init__(self):
+    def __init__(self, pretrained):
         super(RnnImdb, self).__init__()
         config = ConfigManager(self.__class__.__name__).load()
         self.hidden_size = int(config['HIDDEN_SIZE'])
         self.embed_size = int(config["EMBED_SIZE"])
-        self.bi_direction = config['BI_DIRECTION']
+        self.bi_direction = bool(config['BI_DIRECTION'])
         self.vocab_size = int(config["VOCAB_SIZE"])
         self.output_size = int(config["OUTPUT_SIZE"])
         if self.bi_direction:
@@ -42,9 +42,10 @@ class RnnImdb(nn.Module):
         else:
             self.num_directions = 1
 
-        self.embed = nn.Embedding(self.vocab_size, self.embed_size)
+        self.embed = nn.Embedding.from_pretrained(pretrained)
         self.lstm = nn.LSTM(self.embed_size, self.hidden_size, 1, batch_first=True, bidirectional=self.bi_direction)
         self.linear = nn.Linear(self.hidden_size * self.num_directions, self.output_size)
+        self.softmax = nn.Softmax(dim=1)
 
     def init_hidden(self, batch_size):
         hidden = Variable(torch.zeros(self.num_directions, batch_size, self.hidden_size))
@@ -52,8 +53,10 @@ class RnnImdb(nn.Module):
         return hidden, cell
 
     def forward(self, inputs):
+        # TODO(hyungsun): Make this properly.
         embed = self.embed(inputs)
         hidden, cell = self.init_hidden(inputs.size(0))
-        output, (_, _) = self.lstm(embed, (hidden, cell))
-        output = self.linear(output)
+        lstm, (_, _) = self.lstm(embed, (hidden, cell))
+        linear = self.linear(lstm)
+        output = self.softmax(linear)
         return output

@@ -6,26 +6,10 @@ from datasets import Imdb
 
 class BaseData(object):
     """ Base class of the data model.
-
-    All of data classes for network model should implement both eval_data and training_data.
     """
 
     def __init__(self):
         self.cuda = torch.cuda.is_available()
-
-    def eval_data(self):
-        """ Return data for network model to evaluate.
-
-        :return: Data sets for evaluation.
-        """
-        raise NotImplementedError("[-] Function 'eval_data' not implemented at " + self.__class__.__name__)
-
-    def train_data(self):
-        """ Return data for network model to train.
-
-        :return: Data sets for training.
-        """
-        raise NotImplementedError("[-] Function 'train_data' not implemented at " + self.__class__.__name__)
 
 
 class MNIST(BaseData):
@@ -58,30 +42,21 @@ class MNIST(BaseData):
 
 class ACLIMDB(BaseData):
     root = 'data/aclImdb/'
+    data = None
 
-    def __init__(self, batch_size, word_embedding):
+    def __init__(self, batch_size, word_embedding, is_eval):
         BaseData.__init__(self)
         self.batch_size = batch_size
         self.word_embedding = word_embedding
+        self.is_eval = is_eval
+        self.data = Imdb(root=self.root, word_embedding=self.word_embedding, train=not self.is_eval)
 
-    def load(self, is_eval):
+    def load(self):
         additional_options = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
         # TODO(hyungsun): make this class adapt word embedding dynamically.
-        return torch.utils.data.DataLoader(
-            Imdb(root=self.root, word_embedding=self.word_embedding, train=not is_eval),
-            batch_size=self.batch_size,
-            shuffle=True,
-            **additional_options)
-
-    def eval_data(self):
-        return self.load(True)
-
-    def train_data(self):
-        return self.load(False)
+        return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=True, **additional_options)
 
 
 if __name__ == "__main__":
     # TODO(hyungsun): Remove these after debugging.
-    loader = ACLIMDB(10, 'CBOW').load(False)
-    for batch_idx, (data, target) in enumerate(loader):
-        print(batch_idx, data.shape)
+    loader = ACLIMDB(10, 'CBOW', False).load()
