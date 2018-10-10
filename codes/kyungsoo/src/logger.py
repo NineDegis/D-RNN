@@ -1,18 +1,25 @@
 import tensorflow as tf
 import numpy as np
 import scipy.misc
+import os
+import errno
 
 try:
     from StringIO import StringIO  # Python 2.7
 except ImportError:
     from io import BytesIO  # Python 3.x
 
-
 class Logger(object):
-
     def __init__(self, log_dir):
-        self.log_dir = log_dir
         """Create a summary writer logging to log_dir."""
+        ensure_dir(log_dir)
+        if len(os.listdir(log_dir)) == 0:
+            run = 1
+        else:
+            run = int(os.listdir(log_dir)[len(os.listdir(log_dir))-1])+1
+
+        self.log_dir = os.path.join(log_dir, '%d' % run)
+        ensure_dir(log_dir)
         self.writer = tf.summary.FileWriter(self.log_dir)
 
     def scalar_summary(self, tag, value, step):
@@ -71,3 +78,20 @@ class Logger(object):
         self.writer.add_summary(summary, step)
         self.writer.flush()
 
+    def add_scalar(self, loss_avg, accuracy_avg, cur_epoch):
+        info = {"loss": loss_avg, "accuracy": accuracy_avg}
+        for tag, value in info.items():
+            self.scalar_summary(tag, value, cur_epoch + 1)
+
+    def add_histogram(self, model_named_parameters, cur_epoch):
+        for tag, value in model_named_parameters:
+            tag = tag.replace('.', '/')
+            self.histo_summary(tag, value.data.cpu().numpy(), cur_epoch + 1)
+            self.histo_summary(tag + '/grad', value.grad.data.cpu().numpy(), cur_epoch + 1)
+
+def ensure_dir(file_path):
+    try:
+        os.makedirs(file_path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
