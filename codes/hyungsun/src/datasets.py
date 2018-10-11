@@ -1,7 +1,6 @@
 import os
 import re
 import pickle
-
 import torch
 import torch.utils.data as data
 from gensim.models import word2vec
@@ -45,8 +44,6 @@ class Imdb(data.Dataset):
             print(word_embedding, "is not supported.")
             return
 
-        # TODO(hyungsun): Save model, not sentences.
-        print("Generating Word2Cev model...")
         self.embedding_model = word2vec.Word2Vec(
             self.extract_sentences(),
             size=self.embedding_dimension,
@@ -56,15 +53,14 @@ class Imdb(data.Dataset):
             iter=5,
             sg=sg,
         )
-        print("Done.")
 
         if not self._check_processed():
-            self.pre_process(word_embedding)
+            self.pre_process()
+
         if self.train:
             self.train_data, self.train_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.training_file))
             print(len(self.train_data), len(self.train_labels))
-
         else:
             self.test_data, self.test_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.test_file))
@@ -73,7 +69,7 @@ class Imdb(data.Dataset):
         """
         Args:
             index (int): Index
-         Returns:
+        Returns:
             tuple: (vector, target) where target is index of the target class.
         """
         if self.train:
@@ -108,9 +104,12 @@ class Imdb(data.Dataset):
                     # There is no test/unsup in our data.
                     continue
                 path = os.path.join(self.root, mode, classification)
-                words = [re.sub('[^a-z ]+', '', word.lower()) for word in list(word2vec.PathLineSentences(path))]
-                sentence = [alphabetic_word for alphabetic_word in words if alphabetic_word != 'br']
-                sentences += sentence
+                # class_sentences would be 12,500 review data sentences list.
+                class_sentences = list(word2vec.PathLineSentences(path))
+                for sentence in class_sentences:
+                    alphabetic_words = [re.sub('[^a-z ]+', '', word.lower()) for word in sentence]
+                    class_words = [word for word in alphabetic_words if word != 'br' and word != '']
+                    sentences.extend(class_words)
         try:
             os.mkdir(pickle_path)
         except FileExistsError:
@@ -118,10 +117,10 @@ class Imdb(data.Dataset):
             pass
 
         with open(os.path.join(pickle_path, pickle_file), 'wb') as f:
-            pickle.dump(sentences, f, pickle.HIGHEST_PROTOCOL)
+            pickle.dump([sentences], f, pickle.HIGHEST_PROTOCOL)
 
         print("Done.")
-        return sentences
+        return [sentences]
 
     def pre_process(self):
         """Select a pre-process function to execute and save the result in file system.
@@ -138,12 +137,12 @@ class Imdb(data.Dataset):
                         word_vectors = []
                         for _, word in enumerate(list(words)[0]):
                             word = re.sub('[^a-z ]+', '', word.lower())
-                            if word == 'br':
+                            if word == 'br' or len(word) == 0:
                                 continue
                             try:
                                 word_vectors.append(self.embedding_model.wv.get_vector(word).tolist())
                             except KeyError:
-                                print('An excluded word:', word)
+                                # print('An excluded word:', word)
                                 pass
                         vectors.append(word_vectors)
             if mode == 'train':
