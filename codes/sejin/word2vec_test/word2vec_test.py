@@ -1,8 +1,11 @@
 import os
+
+from gensim.models import word2vec
 from gensim.models import Word2Vec
 from gensim.models import KeyedVectors
 import nltk
 from nltk import word_tokenize
+from gensim.test.utils import datapath
 
 nltk.download('punkt')
 
@@ -16,8 +19,8 @@ def read_data_files(path):
     input_data = []
     for root, dirs, files in os.walk(path):
         for idx, file_name in enumerate(files):
-            # if idx == 1000:
-            #     break
+            if idx == 1000:
+                break
             full_file_path = os.path.join(root, file_name)
             with open(full_file_path) as file:
                 try:
@@ -36,17 +39,18 @@ def make_word2vec_model(input_data):
     """
 
     # Tokenize read strings into words
-    words = []
-    for each_str in input_data:
-        words.append(word_tokenize(each_str))
-    print('-' * 10)
-    print('length of words:', len(words))
-    print('length of words[0]:', len(words[0]))
-    print('words[0]:', words[0])
+    # words = []
+    # for each_str in input_data:
+    #     words.append(word_tokenize(each_str))
+    # print('-' * 10)
+    # print('length of words:', len(words))
+    # print('length of words[0]:', len(words[0]))
+    # print('words[0]:', words[0])
 
     # Convert words into vectors
     model = Word2Vec(
-        words,
+        # words,
+        input_data,
         # size=100,
         # window = 2,
         # min_count=50,
@@ -65,8 +69,17 @@ if __name__ == '__main__':
     try:
         model = KeyedVectors.load(saved_model_name, mmap='r')
     except(FileNotFoundError):
-        input_data = read_data_files('./data/train/pos')
-        model = make_word2vec_model(input_data)
+        # input_data = read_data_files('./data/aclImdb/train/pos')
+        # input_data = word2vec.Text8Corpus(datapath('./data/aclImdb/train/pos'))
+        sentences = word2vec.PathLineSentences(
+            # datapath(
+            #     os.path.expanduser(
+            #         os.path.join('data', 'aclImdb', 'train', 'pos')
+            #     )
+            # )
+            'C:\\Users\\jinai\\git_projects\\D-RNN\\codes\\sejin\\word2vec_test\\data\\aclImdb\\test\\pos'
+        )
+        model = make_word2vec_model(list(sentences))
         model.save(saved_model_name)
 
     # Remove unnecessary data from the memory
