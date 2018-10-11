@@ -52,13 +52,18 @@ class ACLIMDB(BaseData):
         self.data = Imdb(root=self.root, word_embedding=self.word_embedding, train=not self.is_eval)
 
     def load(self):
-        additional_options = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
+        additional_options = {'num_workers': 0, 'pin_memory': True} if self.cuda else {}
         # TODO(hyungsun): make this class adapt word embedding dynamically.
         return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=True, **additional_options)
 
 
 if __name__ == "__main__":
     # TODO(hyungsun): Remove these after debugging.
-    loader = ACLIMDB(10, 'CBOW', False).load()
+    loader = ACLIMDB(1, 'CBOW', False).load()
     for batch_idx, (data, target) in enumerate(loader):
-        print(batch_idx)
+        print('idx:', batch_idx)
+        if batch_idx > 100:
+            break
+        data = torch.FloatTensor(data)
+        print('num of words:', len(data))
+        print('score:', target)

@@ -59,12 +59,12 @@ class Imdb(data.Dataset):
         print("Done.")
 
         if not self._check_processed():
-            self.pre_process(word_embedding)
+            self.pre_process()
+
         if self.train:
             self.train_data, self.train_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.training_file))
             print(len(self.train_data), len(self.train_labels))
-
         else:
             self.test_data, self.test_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.test_file))
@@ -108,9 +108,11 @@ class Imdb(data.Dataset):
                     # There is no test/unsup in our data.
                     continue
                 path = os.path.join(self.root, mode, classification)
-                words = [re.sub('[^a-z ]+', '', word.lower()) for word in list(word2vec.PathLineSentences(path))]
-                sentence = [alphabetic_word for alphabetic_word in words if alphabetic_word != 'br']
-                sentences += sentence
+                class_sentences = list(word2vec.PathLineSentences(path))
+                for sentence in class_sentences:
+                    sentence = [re.sub('[^a-z ]+', '', word.lower()) for word in sentence]
+                    class_sentences = [alphabetic_word for alphabetic_word in sentence if alphabetic_word != 'br' and alphabetic_word != '']
+                sentences.extend(class_sentences)
         try:
             os.mkdir(pickle_path)
         except FileExistsError:
@@ -121,7 +123,7 @@ class Imdb(data.Dataset):
             pickle.dump(sentences, f, pickle.HIGHEST_PROTOCOL)
 
         print("Done.")
-        return sentences
+        return [sentences]
 
     def pre_process(self):
         """Select a pre-process function to execute and save the result in file system.
@@ -143,8 +145,9 @@ class Imdb(data.Dataset):
                             try:
                                 word_vectors.append(self.embedding_model.wv.get_vector(word).tolist())
                             except KeyError:
-                                print('An excluded word:', word)
+                                # print('An excluded word:', word)
                                 pass
+                        # print(word_raws)
                         vectors.append(word_vectors)
             if mode == 'train':
                 training_set = vectors, grades
