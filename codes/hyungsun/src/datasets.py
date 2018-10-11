@@ -1,10 +1,18 @@
 import os
 import re
 import pickle
-
 import torch
 import torch.utils.data as data
 from gensim.models import word2vec
+
+
+def to_alphabetic(word):
+    # All of br tags in our data is '<br />' with no exception.
+    # So that word would be "blah<br" or "/>blah" after word2vec processing.
+    # This cannot cover the case which looks like 'item.If'(No white space after period).
+    # TODO(hyungsun): Find better way.
+    cleaned_word = word.replace('<br', '').replace('/>', '')
+    return re.sub('[^a-z ]+', '', cleaned_word.lower())
 
 
 class Imdb(data.Dataset):
@@ -45,8 +53,6 @@ class Imdb(data.Dataset):
             print(word_embedding, "is not supported.")
             return
 
-        # TODO(hyungsun): Save model, not sentences.
-        print("Generating Word2Cev model...")
         self.embedding_model = word2vec.Word2Vec(
             self.extract_sentences(),
             size=self.embedding_dimension,
@@ -56,15 +62,14 @@ class Imdb(data.Dataset):
             iter=5,
             sg=sg,
         )
-        print("Done.")
 
         if not self._check_processed():
-            self.pre_process(word_embedding)
+            self.pre_process()
+
         if self.train:
             self.train_data, self.train_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.training_file))
             print(len(self.train_data), len(self.train_labels))
-
         else:
             self.test_data, self.test_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.test_file))
@@ -73,7 +78,7 @@ class Imdb(data.Dataset):
         """
         Args:
             index (int): Index
-         Returns:
+        Returns:
             tuple: (vector, target) where target is index of the target class.
         """
         if self.train:
@@ -95,7 +100,7 @@ class Imdb(data.Dataset):
                 print("Sentences will be loaded from pickled file: " + pickle_file)
                 return pickle.load(f)
         except FileNotFoundError:
-            print("Pickled sentences file not found.")
+            print("Cannot find pickled file to load sentences.")
             pass
         except Exception as error:
             raise error
@@ -108,9 +113,13 @@ class Imdb(data.Dataset):
                     # There is no test/unsup in our data.
                     continue
                 path = os.path.join(self.root, mode, classification)
-                words = [re.sub('[^a-z ]+', '', word.lower()) for word in list(word2vec.PathLineSentences(path))]
-                sentence = [alphabetic_word for alphabetic_word in words if alphabetic_word != 'br']
-                sentences += sentence
+                # sentences would be 12,500 review data sentences list.
+                for sentence in word2vec.PathLineSentences(path):
+                    alphabetic_words = list(map(lambda x: to_alphabetic(x), sentence))
+                    words = list(filter(lambda x: len(x) != 0, alphabetic_words))
+                    sentences += words
+        # Sentences look like [[review.split()], [...], ...].
+        sentences = [sentences]
         try:
             os.mkdir(pickle_path)
         except FileExistsError:
@@ -132,26 +141,40 @@ class Imdb(data.Dataset):
             grades, vectors = [], []
             for classification in ['pos', 'neg']:
                 for root, dirs, files in os.walk(os.path.join(self.root, mode, classification)):
-                    for idx, file_name in enumerate(files):
-                        grades.append(file_name.rsplit('.', 1)[0].rsplit('_', 1)[1])
-                        words = word2vec.LineSentence(os.path.join(root, file_name))
-                        word_vectors = []
-                        for _, word in enumerate(list(words)[0]):
-                            word = re.sub('[^a-z ]+', '', word.lower())
-                            if word == 'br':
-                                continue
-                            try:
-                                word_vectors.append(self.embedding_model.wv.get_vector(word).tolist())
-                            except KeyError:
-                                print('An excluded word:', word)
-                                pass
-                        vectors.append(word_vectors)
+                    for file_name in files:
+                        # Get grade from filename such as "0_3.txt"
+                        grades.append(int(file_name.split('_')[1][:-4]))
+                        sentences = word2vec.LineSentence(os.path.join(root, file_name))
+                        for sentence in sentences:
+                            word_vectors = []
+                            for word in sentence:
+                                alphabetic_word = to_alphabetic(word)
+                                if len(alphabetic_word) == 0:
+                                    continue
+                                try:
+                                    # get_vector [1, 100]
+                                    word_vectors.append(self.embedding_model.wv.get_vector(alphabetic_word).tolist())
+                                except KeyError:
+                                    # print('An excluded word:', alphabetic_word)
+                                    pass
+                            vectors.append(word_vectors)
             if mode == 'train':
                 training_set = vectors, grades
             else:
                 test_set = vectors, grades
 
-        self.save_processing_cache(training_set, test_set)
+        processed_folder_full_path = os.path.join(self.root, self.processed_folder)
+
+        try:
+            os.mkdir(processed_folder_full_path)
+        except FileExistsError:
+            # 'processed' folder already exists.
+            pass
+
+        with open(os.path.join(self.root, self.processed_folder, self.training_file), 'wb') as f:
+            torch.save(training_set, f)
+        with open(os.path.join(self.root, self.processed_folder, self.test_file), 'wb') as f:
+            torch.save(test_set, f)
         print("Done.")
 
     def pre_process_bow(self):
@@ -159,22 +182,6 @@ class Imdb(data.Dataset):
         TODO(hyungsun): Implement with word2vec library.
         """
         raise NotImplementedError
-
-    def save_processing_cache(self, training_set, test_set):
-        processed_folder_full_path = os.path.join(self.root, self.processed_folder)
-
-        # Create a folder for processing cache files.
-        try:
-            os.mkdir(processed_folder_full_path)
-        except FileExistsError:
-            # 'processed' folder already exists.
-            pass
-
-        # Save
-        with open(os.path.join(self.root, self.processed_folder, self.training_file), 'wb') as f:
-            torch.save(training_set, f)
-        with open(os.path.join(self.root, self.processed_folder, self.test_file), 'wb') as f:
-            torch.save(test_set, f)
 
     def __len__(self):
         if self.train:
