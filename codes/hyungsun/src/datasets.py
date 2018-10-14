@@ -5,6 +5,8 @@ import torch
 import torch.utils.data as data
 from gensim.models import word2vec
 
+TEST_DATA_SIZE = 10
+
 
 def to_alphabetic(word):
     # All of br tags in our data is '<br />' with no exception.
@@ -37,11 +39,12 @@ class Imdb(data.Dataset):
     # See https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding.from_pretrained
     embedding_model = None
 
-    def __init__(self, root, word_embedding, train=True):
+    def __init__(self, root, word_embedding, train=True, test_mode=False):
         self.root = os.path.expanduser(root)
         self.word_embedding = word_embedding  # A string like 'CBOW', 'skip-gram'
         self.train = train  # training set or test set
         self.max_num_words = 0  # To make a 2-dimensional tensor with an uneven list of vectors
+        self.test_mode = test_mode
         if not self._check_exists():
             self.download()
 
@@ -63,7 +66,7 @@ class Imdb(data.Dataset):
             sg=sg,
         )
 
-        if not self._check_processed():
+        if not self._check_processed() or self.test_mode:
             self.pre_process()
 
         if self.train:
@@ -95,6 +98,14 @@ class Imdb(data.Dataset):
         """
         pickle_path = os.path.join(self.root, self.pickled_folder)
         pickle_file = 'sentences.pickle'
+
+        if self.test_mode:
+            try:
+                os.remove(os.path.join(pickle_path, pickle_file))
+                os.rmdir(pickle_path)
+            except FileNotFoundError:
+                pass
+
         try:
             with open(os.path.join(pickle_path, pickle_file), 'rb') as f:
                 print("Sentences will be loaded from pickled file: " + pickle_file)
@@ -107,6 +118,7 @@ class Imdb(data.Dataset):
 
         print("Extracting...")
         sentences = []
+        test_index = 0
         for mode in ['train', 'test']:
             for classification in ['pos', 'neg', 'unsup']:
                 if mode == 'test' and classification == 'unsup':
@@ -115,6 +127,10 @@ class Imdb(data.Dataset):
                 path = os.path.join(self.root, mode, classification)
                 # sentences would be 12,500 review data sentences list.
                 for sentence in word2vec.PathLineSentences(path):
+                    test_index += 1
+                    if self.test_mode and test_index > TEST_DATA_SIZE:
+                        break
+
                     alphabetic_words = list(map(lambda x: to_alphabetic(x), sentence))
                     words = list(filter(lambda x: len(x) != 0, alphabetic_words))
                     sentences += words
@@ -145,7 +161,12 @@ class Imdb(data.Dataset):
                         # Get grade from filename such as "0_3.txt"
                         grades.append(int(file_name.split('_')[1][:-4]))
                         sentences = word2vec.LineSentence(os.path.join(root, file_name))
+                        test_idx = 0
                         for sentence in sentences:
+                            test_idx += 1
+                            if self.test_mode and test_idx > TEST_DATA_SIZE:
+                                break
+
                             word_vectors = []
                             for word in sentence:
                                 alphabetic_word = to_alphabetic(word)
