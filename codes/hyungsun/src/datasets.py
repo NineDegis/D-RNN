@@ -118,7 +118,6 @@ class Imdb(data.Dataset):
 
         print("Extracting...")
         sentences = []
-        test_index = 0
         for mode in ['train', 'test']:
             for classification in ['pos', 'neg', 'unsup']:
                 if mode == 'test' and classification == 'unsup':
@@ -126,6 +125,7 @@ class Imdb(data.Dataset):
                     continue
                 path = os.path.join(self.root, mode, classification)
                 # sentences would be 12,500 review data sentences list.
+                test_index = 0
                 for sentence in word2vec.PathLineSentences(path):
                     test_index += 1
                     if self.test_mode and test_index > TEST_DATA_SIZE:
@@ -157,16 +157,16 @@ class Imdb(data.Dataset):
             grades, vectors = [], []
             for classification in ['pos', 'neg']:
                 for root, dirs, files in os.walk(os.path.join(self.root, mode, classification)):
+                    test_index = 0
                     for file_name in files:
+                        test_index += 1
+                        if self.test_mode and test_index > TEST_DATA_SIZE:
+                            break
+
                         # Get grade from filename such as "0_3.txt"
                         grades.append(int(file_name.split('_')[1][:-4]))
                         sentences = word2vec.LineSentence(os.path.join(root, file_name))
-                        test_idx = 0
                         for sentence in sentences:
-                            test_idx += 1
-                            if self.test_mode and test_idx > TEST_DATA_SIZE:
-                                break
-
                             word_vectors = []
                             for word in sentence:
                                 alphabetic_word = to_alphabetic(word)
