@@ -44,12 +44,16 @@ class ACLIMDB(BaseData):
     root = 'data/aclImdb/'
     data = None
 
-    def __init__(self, batch_size, word_embedding, is_eval):
+    def __init__(self, batch_size, word_embedding, is_eval, test_mode):
         BaseData.__init__(self)
         self.batch_size = batch_size
         self.word_embedding = word_embedding
         self.is_eval = is_eval
-        self.data = Imdb(root=self.root, word_embedding=self.word_embedding, train=not self.is_eval)
+        self.data = Imdb(
+            root=self.root,
+            word_embedding=self.word_embedding,
+            train=not self.is_eval,
+            test_mode=test_mode)
 
     def load(self):
         additional_options = {'num_workers': 0, 'pin_memory': True} if self.cuda else {}
@@ -59,7 +63,7 @@ class ACLIMDB(BaseData):
 
 if __name__ == "__main__":
     # TODO(hyungsun): Remove these after debugging.
-    loader = ACLIMDB(1, 'CBOW', False).load()
+    loader = ACLIMDB(1, 'CBOW', False, True).load()
     for batch_idx, (data, target) in enumerate(loader):
         print('idx:', batch_idx)
         if batch_idx > 100:
