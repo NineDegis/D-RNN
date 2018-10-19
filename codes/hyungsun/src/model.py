@@ -32,31 +32,28 @@ class RnnImdb(nn.Module):
     def __init__(self, pretrained):
         super(RnnImdb, self).__init__()
         config = ConfigManager(self.__class__.__name__).load()
-        self.hidden_size = int(config['HIDDEN_SIZE'])
-        self.embed_size = int(config["EMBED_SIZE"])
-        self.bi_direction = bool(config['BI_DIRECTION'])
-        self.vocab_size = int(config["VOCAB_SIZE"])
-        self.output_size = int(config["OUTPUT_SIZE"])
-        if self.bi_direction:
-            self.num_directions = 2
-        else:
-            self.num_directions = 1
+        self.embed_size = int(config["EMBED_SIZE"])  # embed size -> 100
+        self.hidden_size = int(config['HIDDEN_SIZE'])  # hidden_size -> 100
+        self.output_size = int(config["OUTPUT_SIZE"])  # output_size -> 2
+        self.batch_size = int(config["BATCH_SIZE"])  # batch size -> 1
+        self.num_layers = int(config["NUM_LAYERS"])  # default -> 1
 
         self.embed = nn.Embedding.from_pretrained(pretrained)
-        self.lstm = nn.LSTM(self.embed_size, self.hidden_size, 1, batch_first=True, bidirectional=self.bi_direction)
-        self.linear = nn.Linear(self.hidden_size * self.num_directions, self.output_size)
+        self.lstm = nn.LSTM(self.embed_size, self.hidden_size)
+        self.linear = nn.Linear(self.hidden_size, self.output_size)
         self.softmax = nn.Softmax(dim=1)
 
-    def init_hidden(self, batch_size):
-        hidden = Variable(torch.zeros(self.num_directions, batch_size, self.hidden_size))
-        cell = Variable(torch.zeros(self.num_directions, batch_size, self.hidden_size))
+    def forward(self, inputs, hidden, cell):
+        # TODO(hyungsun): Make this properly.
+        # embed = self.embed(torch.tensor([[1]]))
+        out, (hidden, cell) = self.lstm(inputs, (hidden, cell))
+        linear = self.linear(out.view(1, -1))  # 1->batch_size
+        output = self.softmax(linear)
+        return output, hidden, cell
+
+    def init_hidden(self):
+        hidden = Variable(torch.zeros(1, self.batch_size, self.hidden_size))
+        cell = Variable(torch.zeros(1, self.batch_size, self.hidden_size))
         return hidden, cell
 
-    def forward(self, inputs):
-        # TODO(hyungsun): Make this properly.
-        embed = self.embed(inputs)
-        hidden, cell = self.init_hidden(inputs.size(0))
-        lstm, (_, _) = self.lstm(embed, (hidden, cell))
-        linear = self.linear(lstm)
-        output = self.softmax(linear)
-        return output
+
