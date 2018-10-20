@@ -1,6 +1,10 @@
+import os
+
 import torch
-from torchvision import datasets, transforms
 import torch.utils.data as data
+from torchvision import datasets, transforms
+from gensim.models import KeyedVectors
+
 from datasets import Imdb
 
 
@@ -41,7 +45,10 @@ class MNIST(BaseData):
 
 
 class ACLIMDB(BaseData):
-    root = 'data/aclImdb/'
+    # root = 'data/aclImdb/'
+    root = os.path.join('data', 'aclImdb')
+    wv_folder = 'word_vectors'
+    wv_file = 'word_vectors.wv'
     data = None
 
     def __init__(self, batch_size, word_embedding, is_eval, test_mode):
@@ -57,17 +64,31 @@ class ACLIMDB(BaseData):
 
     def load(self):
         additional_options = {'num_workers': 0, 'pin_memory': True} if self.cuda else {}
+        wv_model = KeyedVectors.load(os.path.join(self.root, self.wv_folder, self.wv_file), mmap='r')
+        print('wv_model:', wv_model)
+        wv = wv_model.wv
         # TODO(hyungsun): make this class adapt word embedding dynamically.
-        return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=True, **additional_options)
+        loader = torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=True, **additional_options)
+        return loader, wv
 
 
 if __name__ == "__main__":
     # TODO(hyungsun): Remove these after debugging.
-    loader = ACLIMDB(1, 'CBOW', False, True).load()
+    batch_size = 3
+    loader, wv = ACLIMDB(batch_size, 'CBOW', False, True).load()
+    word_list = wv.index2entity
+
     for batch_idx, (data, target) in enumerate(loader):
-        print('idx:', batch_idx)
         if batch_idx > 100:
             break
-        data = torch.FloatTensor(data)
+        print('idx:', batch_idx)
+        # data = torch.FloatTensor(data)
         print('num of words:', len(data))
         print('score:', target)
+        for datum in data:
+            # datum = torch.FloatTensor(datum)
+            print('index:', datum)
+            print('words:', list(word_list[i] for i in datum))
+            print('vectors:', list(wv.get_vector(word_list[i]) for i in datum))
+        print('-' * 20)
+

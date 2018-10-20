@@ -4,8 +4,9 @@ import pickle
 import torch
 import torch.utils.data as data
 from gensim.models import word2vec
+from gensim.models import KeyedVectors
 
-TEST_DATA_SIZE = 10
+TEST_DATA_SIZE = 4
 
 
 def to_alphabetic(word):
@@ -27,10 +28,12 @@ class Imdb(data.Dataset):
     """
     processed_folder = 'processed'
     pickled_folder = 'pickled'
+    wv_folder = 'word_vectors'
     training_file = 'training.pt'
     test_file = 'test.pt'
     bow_file = 'labeledBow.feat'
     vocab_file = 'imdb.vocab'
+    wv_file = 'word_vectors.wv'
 
     # Constants for word embedding.
     embedding_dimension = 100
@@ -57,7 +60,7 @@ class Imdb(data.Dataset):
             return
 
         self.embedding_model = word2vec.Word2Vec(
-            self.extract_sentences(),
+            sentences=self.extract_sentences(),
             size=self.embedding_dimension,
             window=2,
             min_count=5,
@@ -65,6 +68,17 @@ class Imdb(data.Dataset):
             iter=5,
             sg=sg,
         )
+        wv_folder_full_path = os.path.join(self.root, self.wv_folder)
+        try:
+            os.mkdir(wv_folder_full_path)
+        except FileExistsError:
+            # 'word_vectors' folder already exists.
+            pass
+        # print(os.path.join(wv_folder_full_path, self.wv_file))
+        self.embedding_model.save(os.path.join(wv_folder_full_path, self.wv_file))
+
+        # Remove unnecessary data from the memory
+        self.embedding_model.init_sims(replace=True)
 
         if not self._check_processed() or self.test_mode:
             self.pre_process()
@@ -152,6 +166,8 @@ class Imdb(data.Dataset):
         """Select a pre-process function to execute and save the result in file system.
         """
         print("Processing...")
+        words = self.embedding_model.wv.index2entity
+        word_to_idx = {words[i]: i for i in range(0, len(words))}
         training_set, test_set = None, None
         for mode in ['train', 'test']:
             grades, vectors = [], []
@@ -174,7 +190,7 @@ class Imdb(data.Dataset):
                                     continue
                                 try:
                                     # get_vector [1, 100]
-                                    word_vectors.append(self.embedding_model.wv.get_vector(alphabetic_word).tolist())
+                                    word_vectors.append(word_to_idx[alphabetic_word])
                                 except KeyError:
                                     # print('An excluded word:', alphabetic_word)
                                     pass
