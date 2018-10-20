@@ -47,8 +47,6 @@ class MNIST(BaseData):
 class ACLIMDB(BaseData):
     # root = 'data/aclImdb/'
     root = os.path.join('data', 'aclImdb')
-    wv_folder = 'word_vectors'
-    wv_file = 'word_vectors.wv'
     data = None
 
     def __init__(self, batch_size, word_embedding, is_eval, test_mode):
@@ -64,31 +62,24 @@ class ACLIMDB(BaseData):
 
     def load(self):
         additional_options = {'num_workers': 0, 'pin_memory': True} if self.cuda else {}
-        wv_model = KeyedVectors.load(os.path.join(self.root, self.wv_folder, self.wv_file), mmap='r')
-        print('wv_model:', wv_model)
-        wv = wv_model.wv
         # TODO(hyungsun): make this class adapt word embedding dynamically.
-        loader = torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=True, **additional_options)
-        return loader, wv
+        return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=True, **additional_options)
 
 
 if __name__ == "__main__":
     # TODO(hyungsun): Remove these after debugging.
     batch_size = 3
-    loader, wv = ACLIMDB(batch_size, 'CBOW', False, True).load()
-    word_list = wv.index2entity
+    loader = ACLIMDB(batch_size, 'CBOW', False, True).load()
 
     for batch_idx, (data, target) in enumerate(loader):
         if batch_idx > 100:
             break
-        print('idx:', batch_idx)
+        print('batch index:', batch_idx)
         # data = torch.FloatTensor(data)
         print('num of words:', len(data))
         print('score:', target)
         for datum in data:
             # datum = torch.FloatTensor(datum)
-            print('index:', datum)
-            print('words:', list(word_list[i] for i in datum))
-            print('vectors:', list(wv.get_vector(word_list[i]) for i in datum))
+            print('data(word index):', datum)
         print('-' * 20)
 

@@ -28,12 +28,10 @@ class Imdb(data.Dataset):
     """
     processed_folder = 'processed'
     pickled_folder = 'pickled'
-    wv_folder = 'word_vectors'
     training_file = 'training.pt'
     test_file = 'test.pt'
     bow_file = 'labeledBow.feat'
     vocab_file = 'imdb.vocab'
-    wv_file = 'word_vectors.wv'
 
     # Constants for word embedding.
     embedding_dimension = 100
@@ -68,17 +66,6 @@ class Imdb(data.Dataset):
             iter=5,
             sg=sg,
         )
-        wv_folder_full_path = os.path.join(self.root, self.wv_folder)
-        try:
-            os.mkdir(wv_folder_full_path)
-        except FileExistsError:
-            # 'word_vectors' folder already exists.
-            pass
-        # print(os.path.join(wv_folder_full_path, self.wv_file))
-        self.embedding_model.save(os.path.join(wv_folder_full_path, self.wv_file))
-
-        # Remove unnecessary data from the memory
-        self.embedding_model.init_sims(replace=True)
 
         if not self._check_processed() or self.test_mode:
             self.pre_process()
@@ -189,8 +176,7 @@ class Imdb(data.Dataset):
                                 if len(alphabetic_word) == 0:
                                     continue
                                 try:
-                                    # get_vector [1, 100]
-                                    word_vectors.append(word_to_idx[alphabetic_word])
+                                    word_vectors.append([word_to_idx[alphabetic_word]])
                                 except KeyError:
                                     # print('An excluded word:', alphabetic_word)
                                     pass
