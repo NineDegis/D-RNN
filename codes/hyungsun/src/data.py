@@ -1,6 +1,10 @@
+import os
+
 import torch
-from torchvision import datasets, transforms
 import torch.utils.data as data
+from torchvision import datasets, transforms
+from gensim.models import KeyedVectors
+
 from datasets import Imdb
 
 
@@ -41,7 +45,8 @@ class MNIST(BaseData):
 
 
 class ACLIMDB(BaseData):
-    root = 'data/aclImdb/'
+    # root = 'data/aclImdb/'
+    root = os.path.join('data', 'aclImdb')
     data = None
 
     def __init__(self, batch_size, word_embedding, is_eval, test_mode):
@@ -63,11 +68,18 @@ class ACLIMDB(BaseData):
 
 if __name__ == "__main__":
     # TODO(hyungsun): Remove these after debugging.
-    loader = ACLIMDB(1, 'CBOW', False, True).load()
+    batch_size = 3
+    loader = ACLIMDB(batch_size, 'CBOW', False, True).load()
+
     for batch_idx, (data, target) in enumerate(loader):
-        print('idx:', batch_idx)
         if batch_idx > 100:
             break
-        data = torch.FloatTensor(data)
+        print('batch index:', batch_idx)
+        # data = torch.FloatTensor(data)
         print('num of words:', len(data))
         print('score:', target)
+        for datum in data:
+            # datum = torch.FloatTensor(datum)
+            print('data(word index):', datum)
+        print('-' * 20)
+
