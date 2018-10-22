@@ -179,6 +179,7 @@ class Imdb(data.Dataset):
         """
         print("Processing...")
         words = self.embedding_model.wv.index2entity
+        words.insert(0, '-')
         word_to_idx = {words[i]: i for i in range(0, len(words))}
         training_set, test_set = None, None
         for mode in ['train', 'test']:

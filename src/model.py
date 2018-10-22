@@ -37,6 +37,8 @@ class RnnImdb(nn.Module):
         self.output_size = int(config["OUTPUT_SIZE"])  # output_size -> 2
         self.batch_size = int(config["BATCH_SIZE"])  # batch size -> 1
 
+        # TODO(sejin): Find a way to add a padding vector into word2vec object
+        pretrained = torch.cat((torch.FloatTensor([[0] * self.embed_size]), pretrained))
         self.embed = nn.Embedding.from_pretrained(pretrained)
         self.lstm = nn.LSTM(self.embed_size, self.hidden_size)
         self.linear = nn.Linear(self.hidden_size, self.output_size)
