@@ -3,10 +3,35 @@ import re
 import pickle
 import torch
 import torch.utils.data as data
+import numpy as np
 from gensim.models import word2vec
-from gensim.models import KeyedVectors
+
 
 TEST_DATA_SIZE = 4
+MAX_SEQ_LEN = 5000   # Max of word vectors size for each reviews.
+
+
+def pad_sequence(sequences, batch_first=False, padding_value=0, max_len=MAX_SEQ_LEN):
+    """Pad a list of variable length Tensors with zero
+    See `torch.nn.utils.rnn.pad_sequence`
+    """
+
+    trailing_dims = sequences[0].size()[1:]
+    if batch_first:
+        out_dims = (len(sequences), max_len) + trailing_dims
+    else:
+        out_dims = (max_len, len(sequences)) + trailing_dims
+
+    out_tensor = sequences[0].data.new(*out_dims).fill_(padding_value)
+    for i, tensor in enumerate(sequences):
+        length = tensor.size(0)
+        # use index notation to prevent duplicate references to the tensor
+        if batch_first:
+            out_tensor[i, :length, ...] = tensor
+        else:
+            out_tensor[:length, i, ...] = tensor
+
+    return out_tensor
 
 
 def to_alphabetic(word):
@@ -73,7 +98,6 @@ class Imdb(data.Dataset):
         if self.train:
             self.train_data, self.train_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.training_file))
-            print(len(self.train_data), len(self.train_labels))
         else:
             self.test_data, self.test_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.test_file))
@@ -167,7 +191,9 @@ class Imdb(data.Dataset):
                             break
 
                         # Get grade from filename such as "0_3.txt"
-                        grades.append(int(file_name.split('_')[1][:-4]))
+                        grade = 0 if int(file_name.split('_')[1][:-4]) > 5 else 1
+                        grades.append(grade)
+
                         sentences = word2vec.LineSentence(os.path.join(root, file_name))
                         for sentence in sentences:
                             word_vectors = []
@@ -180,11 +206,15 @@ class Imdb(data.Dataset):
                                 except KeyError:
                                     # print('An excluded word:', alphabetic_word)
                                     pass
-                            vectors.append(word_vectors)
+                            vectors.append(torch.from_numpy(np.array(word_vectors, np.long)))
+
             if mode == 'train':
-                training_set = vectors, grades
+                training_set = (pad_sequence(vectors, batch_first=True),
+                                torch.from_numpy(np.array(grades, np.long)))
+                pass
             else:
-                test_set = vectors, grades
+                training_set = (pad_sequence(vectors, batch_first=True),
+                                torch.from_numpy(np.array(grades, np.long)))
 
         processed_folder_full_path = os.path.join(self.root, self.processed_folder)
 

@@ -3,7 +3,6 @@ import os
 import torch
 import torch.utils.data as data
 from torchvision import datasets, transforms
-from gensim.models import KeyedVectors
 
 from datasets import Imdb
 
@@ -25,14 +24,15 @@ class MNIST(BaseData):
 
     def load(self, is_eval):
         additional_options = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
+        dataset = datasets.MNIST(root=self.root,
+                                 train=not is_eval,
+                                 download=True,
+                                 transform=transforms.Compose([
+                                     transforms.ToTensor(),
+                                     transforms.Normalize((0.1307,), (0.3081,))
+                                 ]))
         return torch.utils.data.DataLoader(
-            datasets.MNIST(root=self.root,
-                           train=not is_eval,
-                           download=True,
-                           transform=transforms.Compose([
-                               transforms.ToTensor(),
-                               transforms.Normalize((0.1307,), (0.3081,))
-                           ])),
+            dataset,
             batch_size=self.batch_size,
             shuffle=True,
             **additional_options)
@@ -63,23 +63,4 @@ class ACLIMDB(BaseData):
     def load(self):
         additional_options = {'num_workers': 0, 'pin_memory': True} if self.cuda else {}
         # TODO(hyungsun): make this class adapt word embedding dynamically.
-        return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=True, **additional_options)
-
-
-if __name__ == "__main__":
-    # TODO(hyungsun): Remove these after debugging.
-    batch_size = 3
-    loader = ACLIMDB(batch_size, 'CBOW', False, True).load()
-
-    for batch_idx, (data, target) in enumerate(loader):
-        if batch_idx > 100:
-            break
-        print('batch index:', batch_idx)
-        # data = torch.FloatTensor(data)
-        print('num of words:', len(data))
-        print('score:', target)
-        for datum in data:
-            # datum = torch.FloatTensor(datum)
-            print('data(word index):', datum)
-        print('-' * 20)
-
+        return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=False, **additional_options)

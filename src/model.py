@@ -36,19 +36,18 @@ class RnnImdb(nn.Module):
         self.hidden_size = int(config['HIDDEN_SIZE'])  # hidden_size -> 100
         self.output_size = int(config["OUTPUT_SIZE"])  # output_size -> 2
         self.batch_size = int(config["BATCH_SIZE"])  # batch size -> 1
-        self.num_layers = int(config["NUM_LAYERS"])  # default -> 1
 
         self.embed = nn.Embedding.from_pretrained(pretrained)
         self.lstm = nn.LSTM(self.embed_size, self.hidden_size)
         self.linear = nn.Linear(self.hidden_size, self.output_size)
-        self.softmax = nn.Softmax(dim=1)
+        self.softmax = nn.LogSoftmax(dim=1)
 
-    def forward(self, inputs, hidden, cell):
-        # TODO(hyungsun): Make this properly.
-        # embed = self.embed(torch.tensor([[1]]))
-        out, (hidden, cell) = self.lstm(inputs, (hidden, cell))
-        linear = self.linear(out.view(1, -1))  # 1->batch_size
-        output = self.softmax(linear)
+    def forward(self, inputs):
+        hidden, cell = self.init_hidden()
+        embed = torch.squeeze(self.embed(inputs), 2)
+        out, (hidden, cell) = self.lstm(embed, (hidden, cell))
+        linear = self.linear(out)
+        output = self.softmax(linear[-1])
         return output, hidden, cell
 
     def init_hidden(self):

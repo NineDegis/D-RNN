@@ -77,7 +77,7 @@ if __name__ == '__main__':
             #         os.path.join('data', 'aclImdb', 'train', 'pos')
             #     )
             # )
-            'C:\\Users\\jinai\\git_projects\\D-RNN\\codes\\sejin\\word2vec_test\\data\\aclImdb\\test\\pos'
+            'C:\\Users\\jinai\\git_projects\\D-RNN\\experimental\\sejin\\word2vec_test\\data\\aclImdb\\test\\pos'
         )
         model = make_word2vec_model(list(sentences))
         model.save(saved_model_name)
