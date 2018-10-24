@@ -59,6 +59,7 @@ class Imdb(data.Dataset):
     vocab_file = 'imdb.vocab'
 
     # Constants for word embedding.
+    # TODO(sejin): Make it load the value from the ini file
     embedding_dimension = 100
 
     # Pre-trained embedding model for nn.Embedding.
@@ -206,15 +207,15 @@ class Imdb(data.Dataset):
                                 except KeyError:
                                     # print('An excluded word:', alphabetic_word)
                                     pass
-                            vectors.append(torch.from_numpy(np.array(word_vectors, np.long)))
+                            vectors.append(torch.from_numpy(np.array(word_vectors)).long())
 
             if mode == 'train':
                 training_set = (pad_sequence(vectors, batch_first=True),
-                                torch.from_numpy(np.array(grades, np.long)))
+                                torch.from_numpy(np.array(grades)).long())
                 pass
             else:
                 training_set = (pad_sequence(vectors, batch_first=True),
-                                torch.from_numpy(np.array(grades, np.long)))
+                                torch.from_numpy(np.array(grades)).long())
 
         processed_folder_full_path = os.path.join(self.root, self.processed_folder)
 
