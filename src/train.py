@@ -5,17 +5,19 @@ from model import *
 
 config = ConfigManager("RnnImdb").load()
 batch_size = int(config["BATCH_SIZE"])
+learning_rate = float(config["LEARNING_RATE"])
+
 acl_imdb = ACLIMDB(batch_size=batch_size, word_embedding='CBOW', is_eval=False, test_mode=True)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 lstm = RnnImdb(torch.FloatTensor(acl_imdb.data.embedding_model.wv.vectors))
-optimizer = torch.optim.SGD(lstm.parameters(), lr=0.001, weight_decay=0.0003)
+optimizer = torch.optim.SGD(lstm.parameters(), lr=learning_rate, weight_decay=0.0003)
 criterion = nn.NLLLoss()
 
 # TODO(yongha, sejin): Revive `Trainer` class.
 def main():
     print("Start training!!")
-    for i in range(1000000):
+    for i in range(100):
         sum_loss = 0
         for batch_idx, (data, target) in enumerate(acl_imdb.load()):
             data, target = data.to(device=device), target.to(device=device)
@@ -26,7 +28,7 @@ def main():
             loss.backward()
             optimizer.step()
             sum_loss += loss
-            print("epoch : ", i, "/", 999999)
+            print("epoch : ", i, "/", 99)
             print("batch idx : ", batch_idx)
             print("loss : ", float(loss))
             print("target : ", target)

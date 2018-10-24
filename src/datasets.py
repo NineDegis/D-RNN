@@ -179,7 +179,6 @@ class Imdb(data.Dataset):
         """
         print("Processing...")
         words = self.embedding_model.wv.index2entity
-        words.insert(0, '-')
         word_to_idx = {words[i]: i for i in range(0, len(words))}
         training_set, test_set = None, None
         for mode in ['train', 'test']:
@@ -208,15 +207,15 @@ class Imdb(data.Dataset):
                                 except KeyError:
                                     # print('An excluded word:', alphabetic_word)
                                     pass
-                            vectors.append(torch.from_numpy(np.array(word_vectors, np.long)).type(torch.LongTensor))
+                            vectors.append(torch.from_numpy(np.array(word_vectors)).long())
 
             if mode == 'train':
                 training_set = (pad_sequence(vectors, batch_first=True),
-                                torch.from_numpy(np.array(grades, np.long)).type(torch.LongTensor))
+                                torch.from_numpy(np.array(grades)).long())
                 pass
             else:
                 training_set = (pad_sequence(vectors, batch_first=True),
-                                torch.from_numpy(np.array(grades, np.long)).type(torch.LongTensor))
+                                torch.from_numpy(np.array(grades)).long())
 
         processed_folder_full_path = os.path.join(self.root, self.processed_folder)
 
