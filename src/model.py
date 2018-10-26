@@ -32,13 +32,14 @@ class RnnImdb(nn.Module):
     def __init__(self, pretrained):
         super(RnnImdb, self).__init__()
         config = ConfigManager(self.__class__.__name__).load()
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        cuda = torch.cuda.is_available()
+        self.device = torch.device('cuda' if cuda else 'cpu')
         self.embed_size = int(config["EMBED_SIZE"])  # embed size -> 100
         self.hidden_size = int(config['HIDDEN_SIZE'])  # hidden_size -> 100
         self.output_size = int(config["OUTPUT_SIZE"])  # output_size -> 2
         self.batch_size = int(config["BATCH_SIZE"])  # batch size -> 1
 
-        if torch.cuda.is_available():
+        if cuda:
             self.embed = nn.Embedding.from_pretrained(pretrained).cuda()
             self.lstm = nn.LSTM(self.embed_size, self.hidden_size).cuda()
             self.linear = nn.Linear(self.hidden_size, self.output_size).cuda()
