@@ -80,7 +80,13 @@ class TensorBoardLogger(object):
         for tag, value in model_named_parameters:
             tag = tag.replace('.', '/')
             self.summary(self.Mode.HISTOGRAM, tag, value.data.cpu().numpy(), cur_epoch + 1)
-            self.summary(self.Mode.HISTOGRAM, tag + '/grad', value.grad.data.cpu().numpy(), cur_epoch + 1)
+            try:
+                self.summary(self.Mode.HISTOGRAM, tag + '/grad', value.grad.data.cpu().numpy(), cur_epoch + 1)
+                # print(tag, 'is fine')
+            except(AttributeError):
+                # print(tag, 'is the error')
+                continue
+
 
     @staticmethod
     def get_dir_name(log_dir):
