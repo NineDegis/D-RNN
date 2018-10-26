@@ -9,8 +9,6 @@
 
 
 
-
-
 # How to run Tensorboard
 
 ```
@@ -25,5 +23,6 @@ $ tensorboard --logdir=./logs --port=9898
 117.16.136.52:9898
 ```
 
-위 주소로 접근하면 tensorboard 그래프를 확인할 수 있습니다.
+브라우져에서 위 주소로 접근하면 tensorboard 그래프를 확인할 수 있습니다.
 
+`TODO(skrudtn): Make this not visible from repo readme after project is done.`  
