@@ -63,4 +63,4 @@ class ACLIMDB(BaseData):
     def load(self):
         additional_options = {'num_workers': 0, 'pin_memory': True} if self.cuda else {}
         # TODO(hyungsun): make this class adapt word embedding dynamically.
-        return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=False, **additional_options)
+        return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=False, drop_last=True, **additional_options)
