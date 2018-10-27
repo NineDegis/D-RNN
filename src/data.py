@@ -47,7 +47,7 @@ class ACLIMDB(BaseData):
     root = os.path.join('data', 'aclImdb')
     data = None
 
-    def __init__(self, batch_size, word_embedding, is_eval, test_mode):
+    def __init__(self, batch_size, word_embedding, is_eval, debug):
         BaseData.__init__(self)
         self.batch_size = batch_size
         self.word_embedding = word_embedding
@@ -56,7 +56,7 @@ class ACLIMDB(BaseData):
             root=self.root,
             word_embedding=self.word_embedding,
             train=not self.is_eval,
-            test_mode=test_mode)
+            debug=debug)
 
     def load(self):
         additional_options = {'num_workers': 0, 'pin_memory': True} if self.cuda else {}
