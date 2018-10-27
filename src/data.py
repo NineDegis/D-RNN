@@ -1,9 +1,7 @@
 import os
-
 import torch
 import torch.utils.data as data
 from torchvision import datasets, transforms
-
 from datasets import Imdb
 
 
