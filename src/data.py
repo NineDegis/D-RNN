@@ -47,18 +47,18 @@ class ACLIMDB(BaseData):
     root = os.path.join('data', 'aclImdb')
     data = None
 
-    def __init__(self, batch_size, word_embedding, is_eval, debug):
+    def __init__(self, batch_size, embed_method, is_eval, debug):
         BaseData.__init__(self)
         self.batch_size = batch_size
-        self.word_embedding = word_embedding
+        self.embed_method = embed_method
         self.is_eval = is_eval
         self.data = Imdb(
             root=self.root,
-            word_embedding=self.word_embedding,
+            embed_method=self.embed_method,
             train=not self.is_eval,
             debug=debug)
 
     def load(self):
         additional_options = {'num_workers': 0, 'pin_memory': True} if self.cuda else {}
         # TODO(hyungsun): make this class adapt word embedding dynamically.
-        return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=False, drop_last=True, **additional_options)
+        return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=True, drop_last=True, **additional_options)

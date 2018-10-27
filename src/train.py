@@ -139,9 +139,13 @@ class RNNTrainer(Trainer):
         print("End")
 
 
-def train_rnn_imdb(batch_size, learning_rate, max_epoch):
-    acl_imdb = ACLIMDB(batch_size=batch_size, word_embedding='CBOW', is_eval=False, debug=DEBUG_MODE)
-    lstm = RNN(torch.from_numpy(acl_imdb.data.embedding_model.wv.vectors).float())
+def train_rnn_imdb(batch_size, embed_method, learning_rate, max_epoch):
+    acl_imdb = ACLIMDB(batch_size=batch_size, embed_method=embed_method, is_eval=False, debug=DEBUG_MODE)
+    if embed_method == 'TORCH':
+        embedding_model = acl_imdb.data.embedding_model
+    else:
+        embedding_model = torch.from_numpy(acl_imdb.data.embedding_model.wv.vectors).float()
+    lstm = RNN(embedding_model)
     optimizer = torch.optim.SGD(lstm.parameters(), lr=learning_rate, weight_decay=0.0003)
     criterion = nn.NLLLoss()
     trainer = RNNTrainer(lstm, acl_imdb, optimizer, criterion)
@@ -151,10 +155,11 @@ def train_rnn_imdb(batch_size, learning_rate, max_epoch):
 
 def main():
     config = ConfigManager("RNN").load()
+    embed_method = str(config["EMBED_METHOD"])
     batch_size = int(config["BATCH_SIZE"])
     learning_rate = float(config["LEARNING_RATE"])
     max_epoch = int(config["MAX_EPOCH"])
-    train_rnn_imdb(batch_size=batch_size, learning_rate=learning_rate, max_epoch=max_epoch)
+    train_rnn_imdb(batch_size=batch_size, embed_method=embed_method, learning_rate=learning_rate, max_epoch=max_epoch)
 
 
 if __name__ == "__main__":
