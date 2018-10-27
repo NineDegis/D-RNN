@@ -1,14 +1,11 @@
-import os
 import sys
 import time
 import glob
-
 from data import *
 from model import *
 from tensor_board_logger import TensorBoardLogger
 
-SAVE_LOAD_CHECKPOINT = True
-TEST_MODE = True
+DEBUG_MODE = True
 
 
 class Trainer(object):
@@ -45,7 +42,7 @@ class Trainer(object):
     def train(self, max_epoch, batch_size):
         raise NotImplementedError
 
-    def evaluate(self):
+    def evaluate(self, batch_size):
         raise NotImplementedError
 
     @staticmethod
@@ -61,9 +58,12 @@ class RNNTrainer(Trainer):
 
     def train(self, max_epoch, batch_size):
         print("Training started")
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
+
         self.model.train()
         epoch_resume = 0
-        if SAVE_LOAD_CHECKPOINT:
+        if not DEBUG_MODE:
             checkpoint = self.load_checkpoint()
             try:
                 epoch_resume = checkpoint["epoch"]
@@ -78,17 +78,20 @@ class RNNTrainer(Trainer):
             self.current_epoch = epoch
             for batch_idx, (data, target) in enumerate(self.data_loader):
                 data, target = data.to(device=self.device), target.to(device=self.device)
-                self.optimizer.zero_grad()  # Initialize the gradient of model
-                input_data = data.view(-1, batch_size, 1)   # (num of words / batch size) * batch size * index size(1)
+
+                # Initialize the gradient of model
+                self.optimizer.zero_grad()
+
+                # (num of words / batch size) * batch size * index size(1)
+                input_data = data.view(-1, batch_size, 1)
                 output, hidden, cell = self.model(input_data)
                 loss = self.criterion(output, target)
                 loss.backward()
                 self.optimizer.step()
-                if TEST_MODE:
+                if DEBUG_MODE:
                     print("Train Epoch: {}/{} [{}/{} ({:.0f}%)]".format(
-                        epoch, max_epoch, batch_idx * len(data), len(self.data_loader.dataset),
-                                          100. * batch_idx / len(self.data_loader))
-                    )
+                        epoch, max_epoch, batch_idx * len(data),
+                        len(self.data_loader.dataset), 100. * batch_idx / len(self.data_loader)))
                     print("Loss: {:.6f}".format(loss.item()))
                     print("target : ", target)
                     print("output : ", output, end="\n\n")
@@ -97,9 +100,9 @@ class RNNTrainer(Trainer):
                 loss_sum += loss
             loss_avg = loss_sum / len(self.data_loader)
             accuracy_avg = accuracy_sum / len(self.data_loader)
-            #TODO(kyungsoo): Make Tensorboard automatically execute when train.py runs if it is possible
+            # TODO(kyungsoo): Make Tensorboard automatically execute when train.py runs if it is possible
             self.logger.log(loss_avg, accuracy_avg, self.model.named_parameters(), self.current_epoch)
-            if SAVE_LOAD_CHECKPOINT:
+            if not DEBUG_MODE:
                 self.save_checkpoint({
                     "epoch": epoch + 1,
                     "model": self.model.state_dict(),
@@ -110,8 +113,7 @@ class RNNTrainer(Trainer):
     def evaluate(self, batch_size):
         print("Evaluation started")
         self.model.eval()
-        epoch_resume = 0
-        if SAVE_LOAD_CHECKPOINT:
+        if not DEBUG_MODE:
             checkpoint = self.load_checkpoint()
             try:
                 self.optimizer.load_state_dict(checkpoint["optimizer"])
@@ -138,9 +140,8 @@ class RNNTrainer(Trainer):
 
 
 def train_rnn_imdb(batch_size, learning_rate, max_epoch):
-    acl_imdb = ACLIMDB(batch_size=batch_size, word_embedding='CBOW', is_eval=False, test_mode=TEST_MODE)
-    # lstm = RnnImdb(torch.FloatTensor(acl_imdb.data.embedding_model.wv.vectors))
-    lstm = RnnImdb(torch.from_numpy(acl_imdb.data.embedding_model.wv.vectors).type(torch.float))
+    acl_imdb = ACLIMDB(batch_size=batch_size, word_embedding='CBOW', is_eval=False, debug=DEBUG_MODE)
+    lstm = RNN(torch.from_numpy(acl_imdb.data.embedding_model.wv.vectors).float())
     optimizer = torch.optim.SGD(lstm.parameters(), lr=learning_rate, weight_decay=0.0003)
     criterion = nn.NLLLoss()
     trainer = RNNTrainer(lstm, acl_imdb, optimizer, criterion)
@@ -149,7 +150,7 @@ def train_rnn_imdb(batch_size, learning_rate, max_epoch):
 
 
 def main():
-    config = ConfigManager("RnnImdb").load()
+    config = ConfigManager("RNN").load()
     batch_size = int(config["BATCH_SIZE"])
     learning_rate = float(config["LEARNING_RATE"])
     max_epoch = int(config["MAX_EPOCH"])
