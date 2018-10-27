@@ -7,7 +7,7 @@ import numpy as np
 from gensim.models import word2vec
 
 
-TEST_DATA_SIZE = 4
+TEST_DATA_SIZE = 16
 
 
 def pad_sequence(sequences, batch_first=False, max_len=5000, padding_value=0):
@@ -65,12 +65,12 @@ class Imdb(data.Dataset):
     # See https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding.from_pretrained
     embedding_model = None
 
-    def __init__(self, root, word_embedding, train=True, test_mode=False):
+    def __init__(self, root, word_embedding, train=True, debug=False):
         self.root = os.path.expanduser(root)
         self.word_embedding = word_embedding  # A string like 'CBOW', 'skip-gram'
         self.train = train  # training set or test set
         self.max_num_words = 0  # To make a 2-dimensional tensor with an uneven list of vectors
-        self.test_mode = test_mode
+        self.test_mode = debug
         if not self._check_exists():
             self.download()
 
