@@ -31,3 +31,8 @@ This shell script do things below.
 ```
 python train.py
 ```
+
+### 2.3 Running Tensorboard without Training
+```
+./tbrun.sh no
+```
