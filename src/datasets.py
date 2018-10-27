@@ -8,10 +8,9 @@ from gensim.models import word2vec
 
 
 TEST_DATA_SIZE = 4
-MAX_SEQ_LEN = 5000   # Max of word vectors size for each reviews.
 
 
-def pad_sequence(sequences, batch_first=False, padding_value=0, max_len=MAX_SEQ_LEN):
+def pad_sequence(sequences, batch_first=False, max_len=5000, padding_value=0):
     """Pad a list of variable length Tensors with zero
     See `torch.nn.utils.rnn.pad_sequence`
     """
@@ -207,14 +206,16 @@ class Imdb(data.Dataset):
                                 except KeyError:
                                     # print('An excluded word:', alphabetic_word)
                                     pass
+
+                            self.max_num_words = max(self.max_num_words, len(word_vectors))
                             vectors.append(torch.from_numpy(np.array(word_vectors)).long())
 
             if mode == 'train':
-                training_set = (pad_sequence(vectors, batch_first=True),
+                training_set = (pad_sequence(vectors, batch_first=True, max_len=self.max_num_words),
                                 torch.from_numpy(np.array(grades)).long())
                 pass
             else:
-                training_set = (pad_sequence(vectors, batch_first=True),
+                training_set = (pad_sequence(vectors, batch_first=True, max_len=self.max_num_words),
                                 torch.from_numpy(np.array(grades)).long())
 
         processed_folder_full_path = os.path.join(self.root, self.processed_folder)
