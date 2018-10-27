@@ -1,24 +1,48 @@
-import configparser
+import torch
 
 
-class ConfigManager(object):
-    """Model & Training configurations controller.
+class ConstSingleton:
+    _instance = None
 
-        Usage :
-            model = Cnn()
-            section = model.__class__.__name__
-            config = Config().load(section)
-            learning_rate = config["LEARNING_RATE"]
+    @classmethod
+    def __getInstance(cls):
+        return cls._instance
+
+    @classmethod
+    def instance(cls, *args, **kargs):
+        cls._instance = cls(*args, **kargs)
+        cls.instance = cls.__getInstance
+        return cls._instance
+
+    def __setattr__(self, name, value):
+        if name in self.__dict__:
+            raise Exception("Can't rebind const(%s)" % name)
+        self.__dict__[name] = value
+
+
+class ConfigRNN(ConstSingleton):
+    """Set Hyper-parameters of models in here.
     """
-    CONFIG_FILE_NAME = "config/config.ini"
-    DEFAULT_SECTION = "DEFAULT"
+    def __init__(self):
+        # [Train]
+        self.LEARNING_RATE = 0.001
+        self.MAX_EPOCH = 300
+        self.WEIGHT_DECAY = 0.0003
+        self.CRITERION = torch.nn.NLLLoss()
 
-    def __init__(self, section):
-        self.config = configparser.ConfigParser()
-        if len(self.config.read(self.CONFIG_FILE_NAME)) == 0:
-            raise FileNotFoundError("File '{}' does not exist.".format(self.CONFIG_FILE_NAME))
-        self.section = section
+        # [Model]
+        self.BI_DIRECTION = True
+        self.HIDDEN_SIZE = 100
+        self.OUTPUT_SIZE = 2  # output is one of pos([1, 0]) and neg([0, 1]).
+        self.BATCH_SIZE = 32
 
-    def load(self):
-        section = self.section if self.config.has_section(self.section) else self.DEFAULT_SECTION
-        return self.config[section]
+        # [Data]
+        self.PAD_WORD = "<PAD>"
+        self.EMBED_SIZE = 100
+        self.MAX_SEQ_SIZE = 500
+        self.WORD_EMBEDDING = "CBOW"
+
+        # [ETC]
+        self.DEBUG_MODE = False
+        self.LOGGING_ENABLE = True
+        self.CHECKPOINT_ENABLE = False

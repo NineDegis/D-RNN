@@ -1,23 +1,22 @@
+import os
 import sys
 import time
 import glob
-from data import *
-from model import *
-from tensor_board_logger import TensorBoardLogger
-
-DEBUG_MODE = True
+import torch
+import numpy as np
+from model import RNN
+from loader import ACLIMDB
+from config import ConfigRNN
 
 
 class Trainer(object):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     checkpoint_folder = "checkpoints"
 
-    def __init__(self, model, data_loader, optimizer, criterion):
-        self.model = model
+    def __init__(self, model, data_loader, optimizer):
         self.data_loader = data_loader.load()
+        self.model = model
         self.optimizer = optimizer
-        self.criterion = criterion
-        self.logger = TensorBoardLogger(os.path.join("logs", model.__class__.__name__))
         self.prefix = model.__class__.__name__ + "_"
         self.checkpoint_filename = self.prefix + str(int(time.time())) + ".pt"
 
@@ -53,17 +52,25 @@ class Trainer(object):
 
 
 class RNNTrainer(Trainer):
-    def __init__(self, model, data_loader, optimizer, criterion):
-        super().__init__(model, data_loader, optimizer, criterion)
+    config = ConfigRNN.instance()
+
+    def __init__(self, model, data_loader, optimizer):
+        super().__init__(model, data_loader, optimizer)
+        if self.config.LOGGING_ENABLE:
+            from tensor_board_logger import TensorBoardLogger
+            self.logger = TensorBoardLogger(os.path.join("logs", model.__class__.__name__))
+
+        self.current_epoch = 0
 
     def train(self, max_epoch, batch_size):
         print("Training started")
         if torch.cuda.is_available():
             self.model = self.model.cuda()
 
+        # Set model to train mode.
         self.model.train()
         epoch_resume = 0
-        if not DEBUG_MODE:
+        if self.config.CHECKPOINT_ENABLE:
             checkpoint = self.load_checkpoint()
             try:
                 epoch_resume = checkpoint["epoch"]
@@ -76,21 +83,20 @@ class RNNTrainer(Trainer):
             accuracy_sum = 0
             loss_sum = 0
             self.current_epoch = epoch
-            for batch_idx, (data, target) in enumerate(self.data_loader):
-                data, target = data.to(device=self.device), target.to(device=self.device)
+            for batch_idx, (_data, target) in enumerate(self.data_loader):
+                # Transpose vector to make it (num of words / batch size) * batch size * index size(1).
+                _data = np.transpose(_data, (1, 0, 2))
+                _data, target = _data.to(device=self.device), target.to(device=self.device)
 
                 # Initialize the gradient of model
                 self.optimizer.zero_grad()
-
-                # (num of words / batch size) * batch size * index size(1)
-                input_data = data.view(-1, batch_size, 1)
-                output, hidden, cell = self.model(input_data)
-                loss = self.criterion(output, target)
+                output, hidden, cell = self.model(_data)
+                loss = self.config.CRITERION(output, target)
                 loss.backward()
                 self.optimizer.step()
-                if DEBUG_MODE:
+                if self.config.DEBUG_MODE:
                     print("Train Epoch: {}/{} [{}/{} ({:.0f}%)]".format(
-                        epoch, max_epoch, batch_idx * len(data),
+                        epoch, max_epoch, batch_idx * len(_data),
                         len(self.data_loader.dataset), 100. * batch_idx / len(self.data_loader)))
                     print("Loss: {:.6f}".format(loss.item()))
                     print("target : ", target)
@@ -98,11 +104,13 @@ class RNNTrainer(Trainer):
                 accuracy = self.get_accuracy(target, output)
                 accuracy_sum += accuracy
                 loss_sum += loss
-            loss_avg = loss_sum / len(self.data_loader)
-            accuracy_avg = accuracy_sum / len(self.data_loader)
-            # TODO(kyungsoo): Make Tensorboard automatically execute when train.py runs if it is possible
-            self.logger.log(loss_avg, accuracy_avg, self.model.named_parameters(), self.current_epoch)
-            if not DEBUG_MODE:
+            if self.config.LOGGING_ENABLE:
+                if len(self.data_loader) == 0:
+                    raise Exception("Data size is smaller than batch size.")
+                loss_avg = loss_sum / len(self.data_loader)
+                accuracy_avg = accuracy_sum / len(self.data_loader)
+                # TODO(kyungsoo): Make Tensorboard automatically execute when train.py runs if it is possible
+                self.logger.log(loss_avg, accuracy_avg, self.model.named_parameters(), self.current_epoch)
                 self.save_checkpoint({
                     "epoch": epoch + 1,
                     "model": self.model.state_dict(),
@@ -112,8 +120,10 @@ class RNNTrainer(Trainer):
 
     def evaluate(self, batch_size):
         print("Evaluation started")
+
+        # Set model to eval mode.
         self.model.eval()
-        if not DEBUG_MODE:
+        if self.config.CHECKPOINT_ENABLE:
             checkpoint = self.load_checkpoint()
             try:
                 self.optimizer.load_state_dict(checkpoint["optimizer"])
@@ -125,11 +135,11 @@ class RNNTrainer(Trainer):
         test_loss = 0
         correct = 0
         with torch.no_grad():
-            for data, target in self.data_loader:
-                data, target = data.to(self.device), target.to(self.device)
-                input_data = data.view(-1, batch_size, 1)  # (num of words / batch size) * batch size * index size(1)
+            for _data, target in self.data_loader:
+                _data, target = _data.to(self.device), target.to(self.device)
+                input_data = _data.view(-1, batch_size, 1)  # (num of words / batch size) * batch size * index size(1)
                 output, _, _ = self.model(input_data)
-                test_loss += self.criterion(output, target).item()  # sum up batch loss
+                test_loss += self.config.CRITERION(output, target).item()  # sum up batch loss
                 prediction = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
                 correct += prediction.eq(target.view_as(prediction)).sum().item()
         test_loss /= len(self.data_loader.dataset)
@@ -139,22 +149,19 @@ class RNNTrainer(Trainer):
         print("End")
 
 
-def train_rnn_imdb(batch_size, learning_rate, max_epoch):
-    acl_imdb = ACLIMDB(batch_size=batch_size, word_embedding='CBOW', is_eval=False, debug=DEBUG_MODE)
-    lstm = RNN(torch.from_numpy(acl_imdb.data.embedding_model.wv.vectors).float())
-    optimizer = torch.optim.SGD(lstm.parameters(), lr=learning_rate, weight_decay=0.0003)
-    criterion = nn.NLLLoss()
-    trainer = RNNTrainer(lstm, acl_imdb, optimizer, criterion)
-    trainer.train(max_epoch, batch_size)
-    trainer.evaluate(batch_size)
-
-
 def main():
-    config = ConfigManager("RNN").load()
-    batch_size = int(config["BATCH_SIZE"])
-    learning_rate = float(config["LEARNING_RATE"])
-    max_epoch = int(config["MAX_EPOCH"])
-    train_rnn_imdb(batch_size=batch_size, learning_rate=learning_rate, max_epoch=max_epoch)
+    config = ConfigRNN.instance()
+    loader = ACLIMDB(
+        batch_size=config.BATCH_SIZE,
+        word_embedding=config.WORD_EMBEDDING,
+        is_eval=False,
+        debug=config.DEBUG_MODE)
+    vectors = loader.data.embedding_model.wv.vectors
+    model = RNN(torch.from_numpy(vectors).float())
+
+    optimizer = torch.optim.SGD(model.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
+    trainer = RNNTrainer(model, loader, optimizer)
+    trainer.train(config.MAX_EPOCH, config.BATCH_SIZE)
 
 
 if __name__ == "__main__":
