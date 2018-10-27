@@ -65,6 +65,7 @@ class TensorBoardLogger(object):
             self.writer.add_summary(summary, step)
             self.writer.flush()
 
+    #TODO(kyungsoo): Modify it to get more general parameters
     def log(self, loss_avg, accuracy_avg, model_named_parameters, cur_epoch):
         """ Function to receive information to log from trainer.
 
