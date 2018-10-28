@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.autograd
 from torch.autograd import Variable
-from config import *
+from config import ConfigRNN
 
 
 class CNN(nn.Module):
@@ -29,18 +29,15 @@ class CNN(nn.Module):
 class RNN(nn.Module):
     """TODO(hyungsun): Let model classes have optimizer and loss function.
     """
+    config = ConfigRNN.instance()
+
     def __init__(self, pretrained):
         super(RNN, self).__init__()
-        config = ConfigManager(self.__class__.__name__).load()
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.embed_size = int(config["EMBED_SIZE"])
-        self.hidden_size = int(config['HIDDEN_SIZE'])
-        self.output_size = int(config["OUTPUT_SIZE"])
-        self.batch_size = int(config["BATCH_SIZE"])
-
+        self.cuda = torch.cuda.is_available()
+        self.device = torch.device('cuda' if self.cuda else 'cpu')
         self.embed = nn.Embedding.from_pretrained(pretrained)
-        self.lstm = nn.LSTM(self.embed_size, self.hidden_size)
-        self.linear = nn.Linear(self.hidden_size, self.output_size)
+        self.lstm = nn.LSTM(self.config.EMBED_SIZE, self.config.HIDDEN_SIZE)
+        self.linear = nn.Linear(self.config.HIDDEN_SIZE, self.config.OUTPUT_SIZE)
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, inputs):
@@ -52,10 +49,10 @@ class RNN(nn.Module):
         return output, hidden, cell
 
     def init_hidden(self):
-        hidden = Variable(torch.zeros(1, self.batch_size, self.hidden_size))
-        cell = Variable(torch.zeros(1, self.batch_size, self.hidden_size))
-        if torch.cuda.is_available():
+        hidden = Variable(torch.zeros(1, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
+        cell = Variable(torch.zeros(1, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
+        if self.cuda:
             hidden = hidden.cuda()
             cell = cell.cuda()
-            
+
         return hidden, cell

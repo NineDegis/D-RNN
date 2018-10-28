@@ -65,7 +65,7 @@ class TensorBoardLogger(object):
             self.writer.add_summary(summary, step)
             self.writer.flush()
 
-    #TODO(kyungsoo): Modify it to get more general parameters
+    # TODO(kyungsoo): Modify it to get more general parameters
     def log(self, loss_avg, accuracy_avg, model_named_parameters, cur_epoch):
         """ Function to receive information to log from trainer.
 
@@ -84,10 +84,9 @@ class TensorBoardLogger(object):
             try:
                 self.summary(self.Mode.HISTOGRAM, tag + '/grad', value.grad.data.cpu().numpy(), cur_epoch + 1)
                 # print(tag, 'is fine')
-            except(AttributeError):
+            except AttributeError:
                 # print(tag, 'is the error')
-                continue
-
+                pass
 
     @staticmethod
     def get_dir_name(log_dir):
@@ -107,13 +106,13 @@ class TensorBoardLogger(object):
             for directory in dirs:
                 no_list.append(int(directory.split("_")[0]))
             no_list.sort()
-            run = no_list[len(no_list)-1]+1
+            run = no_list[len(no_list) - 1] + 1
 
         now = datetime.now()
         date = str(now.date())
         time = str(now.time().hour) + "." + str(now.time().minute) + "." + str(now.time().second)
 
-        log_path = os.path.join(log_dir, '%d_%s' % (run, date+"T"+time))
+        log_path = os.path.join(log_dir, '%d_%s' % (run, date + "T" + time))
 
         return log_path
 
@@ -131,4 +130,3 @@ class TensorBoardLogger(object):
                 raise
         except Exception as e:
             raise e
-

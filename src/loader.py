@@ -8,12 +8,13 @@ from datasets import Imdb
 class BaseData(object):
     """ Base class of the data model.
     """
-
     def __init__(self):
         self.cuda = torch.cuda.is_available()
 
 
 class MNIST(BaseData):
+    """ For now, we do not use this class.
+    """
     root = 'data/mnist'
 
     def __init__(self, batch_size):
@@ -51,14 +52,22 @@ class ACLIMDB(BaseData):
         BaseData.__init__(self)
         self.batch_size = batch_size
         self.word_embedding = word_embedding
-        self.is_eval = is_eval
         self.data = Imdb(
             root=self.root,
             word_embedding=self.word_embedding,
-            train=not self.is_eval,
+            train=not is_eval,
             debug=debug)
 
     def load(self):
         additional_options = {'num_workers': 0, 'pin_memory': True} if self.cuda else {}
         # TODO(hyungsun): make this class adapt word embedding dynamically.
-        return torch.utils.data.DataLoader(self.data, batch_size=self.batch_size, shuffle=False, drop_last=True, **additional_options)
+        return torch.utils.data.DataLoader(
+            self.data,
+            batch_size=self.batch_size,
+            shuffle=False,
+            drop_last=True,
+            **additional_options)
+
+
+if __name__ == '__main__':
+    ACLIMDB(5, 'CBOW', False, True).load()
