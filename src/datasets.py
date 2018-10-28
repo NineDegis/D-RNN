@@ -2,6 +2,7 @@ import os
 import re
 import pickle
 import torch
+import shutil
 import torch.utils.data as data
 import numpy as np
 from config import ConfigRNN
@@ -79,14 +80,12 @@ class Imdb(data.Dataset):
             self.pickled_folder = 'debug_'+self.pickled_folder
 
         self.pickle_path = os.path.join(self.root, self.pickled_folder)
+        self.processed_path = os.path.join(self.root, self.processed_folder)
 
         if self.debug_mode:
             try:
-                os.remove(os.path.join(self.pickle_path, self.pickle_file))
-                os.rmdir(self.pickle_path)
-                os.remove(os.path.join(self.processed_folder, self.test_file))
-                os.remove(os.path.join(self.processed_folder, self.training_file))
-                os.rmdir(self.processed_folder)
+                shutil.rmtree(self.pickle_path)
+                shutil.rmtree(self.processed_path)
             except FileNotFoundError:
                 pass
 
