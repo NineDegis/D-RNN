@@ -96,7 +96,7 @@ class RNNTrainer(Trainer):
                 self.optimizer.step()
                 if self.config.DEBUG_MODE:
                     print("Train Epoch: {}/{} [{}/{} ({:.0f}%)]".format(
-                        epoch, max_epoch, batch_idx * len(_data),
+                        epoch, max_epoch, batch_idx * _data.shape[1],
                         len(self.data_loader.dataset), 100. * batch_idx / len(self.data_loader)))
                     print("Loss: {:.6f}".format(loss.item()))
                     print("target : ", target)
@@ -153,11 +153,14 @@ def main():
     config = ConfigRNN.instance()
     loader = ACLIMDB(
         batch_size=config.BATCH_SIZE,
-        word_embedding=config.WORD_EMBEDDING,
+        embed_method=config.EMBED_METHOD,
         is_eval=False,
         debug=config.DEBUG_MODE)
-    vectors = loader.data.embedding_model.wv.vectors
-    model = RNN(torch.from_numpy(vectors).float())
+    embedding_model = loader.data.embedding_model
+    if embedding_model == "DEFAULT":
+        model = RNN(torch.from_numpy(embedding_model.wv.vectors).float())
+    else:
+        model = RNN()
 
     optimizer = torch.optim.SGD(model.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
     trainer = RNNTrainer(model, loader, optimizer)

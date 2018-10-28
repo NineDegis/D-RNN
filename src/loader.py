@@ -48,13 +48,13 @@ class ACLIMDB(BaseData):
     root = os.path.join('data', 'aclImdb')
     data = None
 
-    def __init__(self, batch_size, word_embedding, is_eval, debug):
+    def __init__(self, batch_size, embed_method, is_eval, debug):
         BaseData.__init__(self)
         self.batch_size = batch_size
-        self.word_embedding = word_embedding
+        self.embed_method = embed_method
         self.data = Imdb(
             root=self.root,
-            word_embedding=self.word_embedding,
+            embed_method=self.embed_method,
             train=not is_eval,
             debug=debug)
 
@@ -64,7 +64,7 @@ class ACLIMDB(BaseData):
         return torch.utils.data.DataLoader(
             self.data,
             batch_size=self.batch_size,
-            shuffle=False,
+            shuffle=True,
             drop_last=True,
             **additional_options)
 

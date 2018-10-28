@@ -35,12 +35,13 @@ class ConfigRNN(ConstSingleton):
         self.HIDDEN_SIZE = 100
         self.OUTPUT_SIZE = 2  # output is one of pos([1, 0]) and neg([0, 1]).
         self.BATCH_SIZE = 32
+        self.VOCAB_SIZE = 89527 # It is only used when the `EMBED_METHOD` is "DEFAULT"
 
         # [Data]
         self.PAD_WORD = "<PAD>"
         self.EMBED_SIZE = 100
         self.MAX_SEQ_SIZE = 500
-        self.WORD_EMBEDDING = "CBOW"
+        self.EMBED_METHOD = "SKIP_GRAM"
 
         # [ETC]
         self.DEBUG_MODE = False
