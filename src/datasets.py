@@ -6,14 +6,14 @@ import shutil
 import torch
 import torch.utils.data as data
 import numpy as np
+from config import ConfigRNN
 from gensim.models import word2vec
 from nltk import word_tokenize
 
+TEST_DATA_SIZE = 10
 
-TEST_DATA_SIZE = 16
 
-
-def pad_sequence(sequences, batch_first=False, max_len=5000, padding_value=0):
+def pad_sequence(sequences, max_len, batch_first=False, padding_value=0):
     """Pad a list of variable length Tensors with zero
     See `torch.nn.utils.rnn.pad_sequence`
     """
@@ -59,6 +59,7 @@ class Imdb(data.Dataset):
     test_file = 'test.pt'
     bow_file = 'labeledBow.feat'
     vocab_file = 'imdb.vocab'
+    config = ConfigRNN.instance()
 
     # Constants for word embedding.
     # TODO(sejin): Make it load the value from the ini file
@@ -72,44 +73,37 @@ class Imdb(data.Dataset):
         self.root = os.path.expanduser(root)
         self.train = train  # training set or test set
         self.max_num_words = 0  # To make a 2-dimensional tensor with an uneven list of vectors
-        self.test_mode = debug
+        self.debug_mode = debug
         if not self._check_exists():
             self.download()
 
         if embed_method == 'CBOW':
-            self.embedding_model = word2vec.Word2Vec(
-                sentences=self.extract_sentences(),
-                size=self.embedding_dimension,
-                window=2,
-                min_count=5,
-                workers=12,
-                iter=5,
-                sg=0,
-            )
-            words = self.embedding_model.wv.index2entity
-            self.word_to_idx = {words[i]: i for i in range(0, len(words))}
-
+            sg = 0
         elif embed_method == 'SKIP_GRAM':
-            self.embedding_model = word2vec.Word2Vec(
-                sentences=self.extract_sentences(),
-                size=self.embedding_dimension,
-                window=2,
-                min_count=5,
-                workers=12,
-                iter=5,
-                sg=1,
-            )
-            words = self.embedding_model.wv.index2entity
-            self.word_to_idx = {words[i]: i for i in range(0, len(words))}
+            sg = 1
         elif embed_method == 'DEFAULT':
-            self.raw_embedding_model = self.extract_words()
-            self.word_to_idx = {self.raw_embedding_model[i]: i for i in range(0, len(self.raw_embedding_model))}
-            self.embedding_model = list(range(len(self.raw_embedding_model)))
+            sg = None
         else:
             print(embed_method, "is not supported.")
             return
 
-        if not self._check_processed() or self.test_mode:
+        if sg is None:
+            words = self.extract_words()
+            self.word_to_idx = {words[i]: i for i in range(0, len(words))}
+        else:
+            self.embedding_model = word2vec.Word2Vec(
+                sentences=self.extract_sentences(),
+                size=self.embedding_dimension,
+                window=2,
+                min_count=3,
+                workers=12,
+                iter=5,
+                sg=sg,
+            )
+            words = self.embedding_model.wv.index2entity
+            self.word_to_idx = {words[i]: i for i in range(0, len(words))}
+
+        if not self._check_processed() or self.debug_mode:
             self.pre_process(embed_method)
 
         if self.train:
@@ -136,7 +130,7 @@ class Imdb(data.Dataset):
         pickle_path = os.path.join(self.root, self.pickled_folder)
         pickle_file = 'words.pickle'
 
-        if self.test_mode:
+        if self.debug_mode:
             try:
                 shutil.rmtree(pickle_path)
             except FileNotFoundError:
@@ -164,7 +158,7 @@ class Imdb(data.Dataset):
                     test_index = 0
                     for file in files:
                         test_index += 1
-                        if self.test_mode and test_index > TEST_DATA_SIZE:
+                        if self.debug_mode and test_index > TEST_DATA_SIZE:
                             break
                         with open(os.path.join(file_path, file)) as f:
                             sentences = f.readlines()
@@ -197,7 +191,7 @@ class Imdb(data.Dataset):
         pickle_path = os.path.join(self.root, self.pickled_folder)
         pickle_file = 'sentences.pickle'
 
-        if self.test_mode:
+        if self.debug_mode:
             try:
                 shutil.rmtree(pickle_path)
                 os.rmdir(pickle_path)
@@ -226,7 +220,7 @@ class Imdb(data.Dataset):
                 test_index = 0
                 for sentence in word2vec.PathLineSentences(path):
                     test_index += 1
-                    if self.test_mode and test_index > TEST_DATA_SIZE:
+                    if self.debug_mode and test_index > TEST_DATA_SIZE:
                         break
 
                     alphabetic_words = list(map(lambda x: to_alphabetic(x), sentence))
@@ -285,10 +279,51 @@ class Imdb(data.Dataset):
                 partial_vectors.append(torch.from_numpy(np.array(word_vectors)).long())
         return partial_vectors
 
+    def make_vectors_w2v(self, path):
+        partial_vectors = []
+        sentences = word2vec.LineSentence(path)
+        for sentence in sentences:
+            word_vectors = []
+            for word in sentence:
+                alphabetic_word = to_alphabetic(word)
+                if len(alphabetic_word) == 0:
+                    continue
+                try:
+                    word_vectors.append([self.word_to_idx[alphabetic_word]])
+                except KeyError:
+                    # print('An excluded word:', alphabetic_word)
+                    pass
+            self.max_num_words = max(self.max_num_words, len(word_vectors))
+            partial_vectors.append(torch.from_numpy(np.array(word_vectors)).long())
+        return partial_vectors
+
+    def make_vectors_default(self, path):
+        partial_vectors = []
+        with open(path) as f:
+            sentences = f.readlines()
+            for sentence in sentences:
+                word_vectors = []
+                words = word_tokenize(sentence)
+                for word in words:
+                    alphabetic_word = to_alphabetic(word)
+                    if len(alphabetic_word) == 0:
+                        continue
+                    try:
+                        word_vectors.append([self.word_to_idx[alphabetic_word]])
+                    except KeyError:
+                        # print('An excluded word:', alphabetic_word)
+                        pass
+                self.max_num_words = max(self.max_num_words, len(word_vectors))
+                partial_vectors.append(torch.from_numpy(np.array(word_vectors)).long())
+        return partial_vectors
+
     def pre_process(self, embed_method):
         """Select a pre-process function to execute and save the result in file system.
         """
         print("Processing...")
+        # Append pre-defined padding word to mask while training.
+        # TODO(hyungsun): Masking word vectors.
+        padding_value = 0
         training_set, test_set = None, None
         for mode in ['train', 'test']:
             grades, vectors = [], []
@@ -297,7 +332,7 @@ class Imdb(data.Dataset):
                     test_index = 0
                     for file_name in files:
                         test_index += 1
-                        if self.test_mode and test_index > TEST_DATA_SIZE:
+                        if self.debug_mode and test_index > TEST_DATA_SIZE:
                             break
 
                         # Get grade from filename such as "0_3.txt"
@@ -310,17 +345,18 @@ class Imdb(data.Dataset):
                             partial_vectors = self.make_vectors_w2v(os.path.join(root, file_name))
                             vectors.extend(partial_vectors)
 
+            mode_set = (pad_sequence(vectors,
+                                     max_len=self.max_num_words,
+                                     batch_first=True,
+                                     padding_value=padding_value),
+                        torch.from_numpy(np.array(grades)).long())
             if mode == 'train':
-                training_set = (pad_sequence(vectors, batch_first=True, max_len=self.max_num_words),
-                                torch.from_numpy(np.array(grades)).long())
+                training_set = mode_set
             else:
-                test_set = (pad_sequence(vectors, batch_first=True, max_len=self.max_num_words),
-                                torch.from_numpy(np.array(grades)).long())
-
-        processed_folder_full_path = os.path.join(self.root, self.processed_folder)
+                test_set = mode_set
 
         try:
-            os.mkdir(processed_folder_full_path)
+            os.mkdir(os.path.join(self.root, self.processed_folder))
         except FileExistsError:
             # 'processed' folder already exists.
             pass
@@ -330,10 +366,6 @@ class Imdb(data.Dataset):
         with open(os.path.join(self.root, self.processed_folder, self.test_file), 'wb') as f:
             torch.save(test_set, f)
         print("Done.")
-
-    def pre_process_bow(self):
-        #TODO(sejin): Implement this
-        raise NotImplementedError
 
     def __len__(self):
         if self.train:
@@ -350,9 +382,6 @@ class Imdb(data.Dataset):
         return os.path.exists(os.path.join(self.root, self.processed_folder, self.training_file)) and \
             os.path.exists(os.path.join(self.root, self.processed_folder, self.test_file))
 
-    def _check_embed_model_created(self):
-        return os.path.exists(os.path.join(self.root, self.processed_folder, self.embedding_file))
-
     def download(self):
         """Download the Imdb review data if it doesn't exist in processed_folder already."""
         # TODO(hyungsun): Implement if needed.
@@ -361,7 +390,6 @@ class Imdb(data.Dataset):
     def __repr__(self):
         fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
         fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        tmp = 'train' if self.train is True else 'test'
-        fmt_str += '    Split: {}\n'.format(tmp)
+        fmt_str += '    Split: {}\n'.format('train' if self.train is True else 'test')
         fmt_str += '    Root Location: {}\n'.format(self.root)
         return fmt_str
