@@ -141,7 +141,7 @@ class RNNTrainer(Trainer):
 
 def train_rnn_imdb(batch_size, embed_method, learning_rate, max_epoch):
     acl_imdb = ACLIMDB(batch_size=batch_size, embed_method=embed_method, is_eval=False, debug=DEBUG_MODE)
-    if embed_method == 'TORCH':
+    if embed_method == 'DEFAULT':
         embedding_model = acl_imdb.data.embedding_model
     else:
         embedding_model = torch.from_numpy(acl_imdb.data.embedding_model.wv.vectors).float()

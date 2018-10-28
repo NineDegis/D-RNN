@@ -40,8 +40,7 @@ class RNN(nn.Module):
         self.output_size = int(config["OUTPUT_SIZE"])
         self.batch_size = int(config["BATCH_SIZE"])
 
-        print(self.embed_method)
-        if self.embed_method == "TORCH":
+        if self.embed_method == "DEFAULT":
             self.embed = nn.Embedding(self.vocab_size, self.embed_size)
         else:
             self.embed = nn.Embedding.from_pretrained(pretrained)
