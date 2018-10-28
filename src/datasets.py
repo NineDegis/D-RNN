@@ -4,6 +4,7 @@ import pickle
 import shutil
 
 import torch
+import shutil
 import torch.utils.data as data
 import numpy as np
 from config import ConfigRNN
@@ -55,6 +56,7 @@ class Imdb(data.Dataset):
     """
     processed_folder = 'processed'
     pickled_folder = 'pickled'
+    pickle_file = 'sentences.pickle'
     training_file = 'training.pt'
     test_file = 'test.pt'
     bow_file = 'labeledBow.feat'
@@ -74,6 +76,21 @@ class Imdb(data.Dataset):
         self.train = train  # training set or test set
         self.max_num_words = 0  # To make a 2-dimensional tensor with an uneven list of vectors
         self.debug_mode = debug
+
+        if self.debug_mode:
+            self.processed_folder = 'debug_'+self.processed_folder
+            self.pickled_folder = 'debug_'+self.pickled_folder
+
+        self.pickle_path = os.path.join(self.root, self.pickled_folder)
+        self.processed_path = os.path.join(self.root, self.processed_folder)
+
+        if self.debug_mode:
+            try:
+                shutil.rmtree(self.pickle_path)
+                shutil.rmtree(self.processed_path)
+            except FileNotFoundError:
+                pass
+
         if not self._check_exists():
             self.download()
 
@@ -103,7 +120,7 @@ class Imdb(data.Dataset):
             words = self.embedding_model.wv.index2entity
             self.word_to_idx = {words[i]: i for i in range(0, len(words))}
 
-        if not self._check_processed() or self.debug_mode:
+        if not self._check_processed():
             self.pre_process(embed_method)
 
         if self.train:
@@ -188,19 +205,9 @@ class Imdb(data.Dataset):
 
         :return: sentences type of list of list.
         """
-        pickle_path = os.path.join(self.root, self.pickled_folder)
-        pickle_file = 'sentences.pickle'
-
-        if self.debug_mode:
-            try:
-                shutil.rmtree(pickle_path)
-                os.rmdir(pickle_path)
-            except FileNotFoundError:
-                pass
-
         try:
-            with open(os.path.join(pickle_path, pickle_file), 'rb') as f:
-                print("Sentences will be loaded from pickled file: " + pickle_file)
+            with open(os.path.join(self.pickle_path, self.pickle_file), 'rb') as f:
+                print("Sentences will be loaded from pickled file: " + self.pickle_file)
                 return pickle.load(f)
         except FileNotFoundError:
             print("Cannot find pickled file to load sentences.")
@@ -229,12 +236,12 @@ class Imdb(data.Dataset):
         # Sentences look like [[review.split()], [...], ...].
         sentences = [sentences]
         try:
-            os.mkdir(pickle_path)
+            os.mkdir(self.pickle_path)
         except FileExistsError:
             # 'processed' folder already exists.
             pass
 
-        with open(os.path.join(pickle_path, pickle_file), 'wb') as f:
+        with open(os.path.join(self.pickle_path, self.pickle_file), 'wb') as f:
             pickle.dump(sentences, f, pickle.HIGHEST_PROTOCOL)
 
         print("Done.")

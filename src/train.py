@@ -96,7 +96,7 @@ class RNNTrainer(Trainer):
                 self.optimizer.step()
                 if self.config.DEBUG_MODE:
                     print("Train Epoch: {}/{} [{}/{} ({:.0f}%)]".format(
-                        epoch, max_epoch, batch_idx * len(_data),
+                        epoch, max_epoch, batch_idx * _data.shape[1],
                         len(self.data_loader.dataset), 100. * batch_idx / len(self.data_loader)))
                     print("Loss: {:.6f}".format(loss.item()))
                     print("target : ", target)

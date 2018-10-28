@@ -33,8 +33,8 @@ class RNN(nn.Module):
 
     def __init__(self, pretrained=None):
         super(RNN, self).__init__()
-        self.cuda = torch.cuda.is_available()
-        self.device = torch.device('cuda' if self.cuda else 'cpu')
+        self.cuda_available = torch.cuda.is_available()
+        self.device = torch.device('cuda' if self.cuda_available else 'cpu')
         if pretrained == None:
             self.embed = nn.Embedding(self.config.VOCAB_SIZE, self.config.EMBED_SIZE)
         else:
@@ -54,7 +54,7 @@ class RNN(nn.Module):
     def init_hidden(self):
         hidden = Variable(torch.zeros(1, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
         cell = Variable(torch.zeros(1, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
-        if self.cuda:
+        if self.cuda_available:
             hidden = hidden.cuda()
             cell = cell.cuda()
 
