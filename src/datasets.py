@@ -1,8 +1,6 @@
 import os
 import re
 import pickle
-import shutil
-
 import torch
 import shutil
 import torch.utils.data as data
@@ -11,7 +9,7 @@ from config import ConfigRNN
 from gensim.models import word2vec
 from nltk import word_tokenize
 
-TEST_DATA_SIZE = 10
+TEST_DATA_SIZE = 50
 
 
 def pad_sequence(sequences, max_len, batch_first=False, padding_value=0):
@@ -64,12 +62,12 @@ class Imdb(data.Dataset):
     config = ConfigRNN.instance()
 
     # Constants for word embedding.
-    # TODO(sejin): Make it load the value from the ini file
-    embedding_dimension = 100
+    embedding_dimension = config.EMBED_SIZE
 
     # Pre-trained embedding model for nn.Embedding.
     # See https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding.from_pretrained
     embedding_model = None
+    lengths = None
 
     def __init__(self, root, embed_method, train=True, debug=False):
         self.root = os.path.expanduser(root)
@@ -106,15 +104,18 @@ class Imdb(data.Dataset):
 
         if sg is None:
             words = self.extract_words()
+
+            # Insert pre-defined padding word to mask while training.
+            words.insert(0, self.config.PAD_WORD)
             self.word_to_idx = {words[i]: i for i in range(0, len(words))}
         else:
             self.embedding_model = word2vec.Word2Vec(
                 sentences=self.extract_sentences(),
                 size=self.embedding_dimension,
                 window=2,
-                min_count=3,
+                min_count=5,
                 workers=12,
-                iter=5,
+                iter=100,
                 sg=sg,
             )
             words = self.embedding_model.wv.index2entity
@@ -328,8 +329,6 @@ class Imdb(data.Dataset):
         """Select a pre-process function to execute and save the result in file system.
         """
         print("Processing...")
-        # Append pre-defined padding word to mask while training.
-        # TODO(hyungsun): Masking word vectors.
         padding_value = 0
         training_set, test_set = None, None
         for mode in ['train', 'test']:

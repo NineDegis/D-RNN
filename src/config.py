@@ -23,9 +23,10 @@ class ConstSingleton:
 class ConfigRNN(ConstSingleton):
     """Set Hyper-parameters of models in here.
     """
+
     def __init__(self):
         # [Train]
-        self.LEARNING_RATE = 0.001
+        self.LEARNING_RATE = 0.1
         self.MAX_EPOCH = 300
         self.WEIGHT_DECAY = 0.0003
         self.CRITERION = torch.nn.NLLLoss()
@@ -35,15 +36,16 @@ class ConfigRNN(ConstSingleton):
         self.HIDDEN_SIZE = 100
         self.OUTPUT_SIZE = 2  # output is one of pos([1, 0]) and neg([0, 1]).
         self.BATCH_SIZE = 32
-        self.VOCAB_SIZE = 89527 # It is only used when the `EMBED_METHOD` is "DEFAULT"
+        self.VOCAB_SIZE = 89527  # It is only used when the `EMBED_METHOD` is "DEFAULT"
 
         # [Data]
         self.PAD_WORD = "<PAD>"
         self.EMBED_SIZE = 100
-        self.MAX_SEQ_SIZE = 500
+        self.MAX_SEQ_SIZE = 5000
         self.EMBED_METHOD = "SKIP_GRAM"
+        self.SHUFFLE = True
 
         # [ETC]
-        self.DEBUG_MODE = False
-        self.LOGGING_ENABLE = True
+        self.DEBUG_MODE = True
+        self.LOGGING_ENABLE = False
         self.CHECKPOINT_ENABLE = False

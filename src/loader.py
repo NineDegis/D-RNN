@@ -1,8 +1,8 @@
 import os
 import torch
 import torch.utils.data as data
-from torchvision import datasets, transforms
 from datasets import Imdb
+from config import ConfigRNN
 
 
 class BaseData(object):
@@ -12,39 +12,9 @@ class BaseData(object):
         self.cuda = torch.cuda.is_available()
 
 
-class MNIST(BaseData):
-    """ For now, we do not use this class.
-    """
-    root = 'data/mnist'
-
-    def __init__(self, batch_size):
-        BaseData.__init__(self)
-        self.batch_size = batch_size
-
-    def load(self, is_eval):
-        additional_options = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
-        dataset = datasets.MNIST(root=self.root,
-                                 train=not is_eval,
-                                 download=True,
-                                 transform=transforms.Compose([
-                                     transforms.ToTensor(),
-                                     transforms.Normalize((0.1307,), (0.3081,))
-                                 ]))
-        return torch.utils.data.DataLoader(
-            dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            **additional_options)
-
-    def eval_data(self):
-        return self.load(True)
-
-    def train_data(self):
-        return self.load(False)
-
-
 class ACLIMDB(BaseData):
     # root = 'data/aclImdb/'
+    config = ConfigRNN.instance()
     root = os.path.join('data', 'aclImdb')
     data = None
 
@@ -64,10 +34,11 @@ class ACLIMDB(BaseData):
         return torch.utils.data.DataLoader(
             self.data,
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=self.config.SHUFFLE,
             drop_last=True,
             **additional_options)
 
 
 if __name__ == '__main__':
+    # TODO(hyungsun): Remove.
     ACLIMDB(5, 'CBOW', False, True).load()
