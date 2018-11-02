@@ -1,4 +1,28 @@
-<div>
-  <h1>Welcome to HOME, homie!!!!!!</h1>
-  <p><%= movies %></p>
+<div class="content">
+  <div class="find-helpers">
+    <div class="search-bar">
+      <select title="search-crisis">
+        <option value="title">title</option>
+        <option value="genre">genre</option>
+        <option value="director">director</option>
+        <option value="actor">actor</option>
+      </select>
+      <input type="text" />
+    </div>
+    <div class="sort-bar">
+      <span>Sort by</span>
+      <select title="movie-sort">
+        <option value="release-desc">release(desc)</option>
+        <option value="release-asc">release(asc)</option>
+        <option value="title-desc">title(desc)</option>
+        <option value="title-asc">title(asc)</option>
+      </select>
+    </div>
+    <div class="movies">
+      <%= movies %>
+    </div>
+    <div class="pages">
+      << < 1 2 3 > >>
+    </div>
+  </div>
 </div>
