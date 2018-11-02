@@ -1,2 +1,5 @@
 # Ignore log files
 yarn-error.log*
+
+# Ignore rendered css files
+public/css/*
