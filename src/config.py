@@ -27,15 +27,15 @@ class ConfigRNN(ConstSingleton):
     def __init__(self):
         # [Train]
         self.LEARNING_RATE = 0.1
-        self.MAX_EPOCH = 300
+        self.MAX_EPOCH = 3000
         self.WEIGHT_DECAY = 0.0003
-        self.CRITERION = torch.nn.NLLLoss()
+        self.CRITERION = torch.nn.CrossEntropyLoss()
 
         # [Model]
         self.BI_DIRECTION = True
         self.HIDDEN_SIZE = 100
         self.OUTPUT_SIZE = 2  # output is one of pos([1, 0]) and neg([0, 1]).
-        self.BATCH_SIZE = 32
+        self.BATCH_SIZE = 3
         self.VOCAB_SIZE = 89527  # It is only used when the `EMBED_METHOD` is "DEFAULT"
 
         # [Data]
