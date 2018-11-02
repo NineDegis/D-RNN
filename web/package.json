@@ -5,7 +5,6 @@
   "repository": "https://github.com/NineDegis/D-RNN",
   "license": "MIT",
   "dependencies": {
-    "ejs": "^2.6.1",
     "koa": "^2.6.1",
     "koa-ejs": "^4.1.2",
     "koa-router": "^7.4.0",

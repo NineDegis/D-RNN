@@ -1,2 +1,75 @@
-h1
-  color: blue
+@font-face
+  font-family: GoyangDeokyangB
+  src: url("../fonts/고양덕양 B.ttf")
+
+@font-face
+  font-family: NanumBarunGothicLight
+  src: url(../fonts/NanumBarunGothicLight.ttf)
+
+$primary-color: #ddd
+$primary-bg-color: #222
+$secondary-color: #900
+
+$menu-font: 18px #{NanumBarunGothicLight}, #{"Bitstream Vera Sans Mono"}, #{"Lucida Grande"}, Helvetica, Arial, sans-serif
+$content-font: 14px #{NanumBarunGothicLight}, #{"Bitstream Vera Sans Mono"}, #{"Lucida Grande"}, Helvetica, Arial, sans-serif
+$title-font: 14px #{GoyangDeokyangB}, #{"Bitstream Vera Sans Mono"}, #{"Lucida Grande"}, Helvetica, Arial, sans-serif
+
+$nav-height: 2.5em
+
+body
+  background-color: black
+  width: 100%
+  margin: 0
+  padding: 0
+
+p
+  margin: 0
+
+select
+  color: $primary-color
+  background-color: transparent
+  border-color: transparent
+
+input
+  color: $primary-color
+  background-color: transparent
+  border-color: transparent
+  border-bottom-color: azure
+
+.nav
+  font: $menu-font
+  color: $primary-color
+  width: 100%
+  height: $nav-height
+  background-color: $secondary-color
+  .home-logo
+    display: inline-block
+    img
+      height: 100%
+  .nav-items
+    display: inline-block
+    float: right
+    margin-top: calc((#{$nav-height} - 1em) / 2)
+    .nav-item
+      display: inline-block
+      width: 5em
+      text-align: center
+
+.content
+  color: $primary-color
+  .find-helpers
+    text-align: center
+    .search-bar
+      $search-bar-height: 2em
+      height: $search-bar-height
+      margin-top: calc((#{$search-bar-height} - 1em) / 2)
+      select
+        width: 5em
+      input
+        width: 15em
+    .sort-bar
+      $sort-bar-height: 2em
+      height: $sort-bar-height
+      margin-top: calc((#{$sort-bar-height} - 1em) / 2)
+      select
+        width: 10em
