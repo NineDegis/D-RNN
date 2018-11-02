@@ -1,0 +1,21 @@
+{
+  "name": "drnn-web",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/NineDegis/D-RNN",
+  "license": "MIT",
+  "dependencies": {
+    "koa": "^2.6.1",
+    "koa-router": "^7.4.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-async-to-generator": "^6.24.1",
+    "babel-preset-env": "^1.7.0",
+    "eslint-config-airbnb": "^17.1.0"
+  },
+  "scripts": {
+    "test": "babel-node index.js test",
+    "start": "babel-node index.js start"
+  }
+}
