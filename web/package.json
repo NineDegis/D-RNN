@@ -5,17 +5,23 @@
   "repository": "https://github.com/NineDegis/D-RNN",
   "license": "MIT",
   "dependencies": {
+    "ejs": "^2.6.1",
     "koa": "^2.6.1",
-    "koa-router": "^7.4.0"
+    "koa-ejs": "^4.1.2",
+    "koa-router": "^7.4.0",
+    "koa-static": "^5.0.0",
+    "node-sass": "^4.9.4"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-preset-env": "^1.7.0",
-    "eslint-config-airbnb": "^17.1.0"
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-plugin-import": "^2.14.0"
   },
   "scripts": {
-    "test": "babel-node index.js test",
-    "start": "babel-node index.js start"
+    "sass": "rm -r public/css > /dev/null; node-sass public/sass --output-style compressed --output public/css",
+    "test": "yarn sass; babel-node index.js test",
+    "start": "yarn sass; babel-node index.js start"
   }
 }
