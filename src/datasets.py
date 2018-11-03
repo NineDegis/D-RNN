@@ -6,11 +6,13 @@ import shutil
 import torch.utils.data as data
 import numpy as np
 from config import ConfigRNN
+import warnings
 from gensim.models import word2vec
 from nltk import word_tokenize
 
-TEST_DATA_SIZE = 50
+warnings.filterwarnings(action='ignore', category=UserWarning, module='gensim')
 
+TEST_DATA_SIZE = 10
 
 def pad_sequence(sequences, max_len, batch_first=False, padding_value=0):
     """Pad a list of variable length Tensors with zero

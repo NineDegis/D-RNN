@@ -22,7 +22,7 @@ class RNN(nn.Module):
         self.linear = nn.Linear(self.config.HIDDEN_SIZE, self.config.OUTPUT_SIZE)
         self.softmax = nn.LogSoftmax(dim=1)
 
-    def forward(self, inputs):
+    def forward(self, inputs, target):
         # 문장 길이를 쉽게 뽑아내기 위해 전처리로 permute 와 squeeze를 한다.
         _inputs = inputs.permute(1, 0, 2).squeeze(2)
         input_lengths = torch.LongTensor([torch.max(_inputs[i, :].data.nonzero()) + 1 for i in range(_inputs.size(0))])
@@ -30,6 +30,9 @@ class RNN(nn.Module):
 
         # 워드 인덱스 텐서가 문장 길이가 긴 순서대로 정렬된다.
         input_seq2idx = _inputs[sorted_idx]
+
+        # 문장이 정렬된 순서에 맞게 Target 값도 정렬한다.
+        sorted_target = target[sorted_idx]
 
         # 워드 인덱스 텐서를 원드 벡터 텐서로 변환.
         embeded = self.embed(input_seq2idx)
@@ -46,7 +49,7 @@ class RNN(nn.Module):
         # Soft max.
         output = self.softmax(linear.squeeze())
 
-        return output, hidden, cell
+        return output, hidden, cell, sorted_target
     
     def init_hidden(self):
         hidden = Variable(torch.zeros(1, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
