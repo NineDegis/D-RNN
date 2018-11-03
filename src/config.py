@@ -27,9 +27,9 @@ class ConfigRNN(ConstSingleton):
     def __init__(self):
         # [Train]
         self.LEARNING_RATE = 0.1
-        self.MAX_EPOCH = 300
+        self.MAX_EPOCH = 3000
         self.WEIGHT_DECAY = 0.0003
-        self.CRITERION = torch.nn.NLLLoss()
+        self.CRITERION = torch.nn.CrossEntropyLoss()
 
         # [Model]
         self.BI_DIRECTION = True

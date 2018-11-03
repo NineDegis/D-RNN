@@ -90,8 +90,8 @@ class RNNTrainer(Trainer):
 
                 # Initialize the gradient of model
                 self.optimizer.zero_grad()
-                output, hidden, cell = self.model(_data)
-                loss = self.config.CRITERION(output, target)
+                output, hidden, cell, sorted_target = self.model(_data, target)
+                loss = self.config.CRITERION(output, sorted_target)
                 loss.backward()
                 self.optimizer.step()
                 if self.config.DEBUG_MODE:
@@ -101,7 +101,7 @@ class RNNTrainer(Trainer):
                     print("Loss: {:.6f}".format(loss.item()))
                     print("target : ", target)
                     print("output : ", output, end="\n\n")
-                accuracy = self.get_accuracy(target, output)
+                accuracy = self.get_accuracy(sorted_target, output)
                 accuracy_sum += accuracy
                 loss_sum += loss
             if self.config.LOGGING_ENABLE:
