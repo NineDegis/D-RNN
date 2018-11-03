@@ -33,7 +33,7 @@ class ConfigRNN(ConstSingleton):
 
         # [Model]
         self.BI_DIRECTION = True
-        self.HIDDEN_SIZE = 100
+        self.HIDDEN_SIZE = 200
         self.OUTPUT_SIZE = 2  # output is one of pos([1, 0]) and neg([0, 1]).
         self.BATCH_SIZE = 32
         self.VOCAB_SIZE = 89527  # It is only used when the `EMBED_METHOD` is "DEFAULT"

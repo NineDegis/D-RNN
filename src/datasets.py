@@ -14,6 +14,7 @@ warnings.filterwarnings(action='ignore', category=UserWarning, module='gensim')
 
 TEST_DATA_SIZE = 10
 
+
 def pad_sequence(sequences, max_len, batch_first=False, padding_value=0):
     """Pad a list of variable length Tensors with zero
     See `torch.nn.utils.rnn.pad_sequence`
@@ -106,10 +107,6 @@ class Imdb(data.Dataset):
 
         if sg is None:
             words = self.extract_words()
-
-            # Insert pre-defined padding word to mask while training.
-            words.insert(0, self.config.PAD_WORD)
-            self.word_to_idx = {words[i]: i for i in range(0, len(words))}
         else:
             self.embedding_model = word2vec.Word2Vec(
                 sentences=self.extract_sentences(),
@@ -121,7 +118,11 @@ class Imdb(data.Dataset):
                 sg=sg,
             )
             words = self.embedding_model.wv.index2entity
-            self.word_to_idx = {words[i]: i for i in range(0, len(words))}
+
+            # Insert pre-defined padding word to mask while training.
+            words.insert(0, self.config.PAD_WORD)
+
+        self.word_to_idx = {words[i]: i for i in range(0, len(words))}
 
         if not self._check_processed():
             self.pre_process(embed_method)
@@ -287,24 +288,6 @@ class Imdb(data.Dataset):
 
                 self.max_num_words = max(self.max_num_words, len(word_vectors))
                 partial_vectors.append(torch.from_numpy(np.array(word_vectors)).long())
-        return partial_vectors
-
-    def make_vectors_w2v(self, path):
-        partial_vectors = []
-        sentences = word2vec.LineSentence(path)
-        for sentence in sentences:
-            word_vectors = []
-            for word in sentence:
-                alphabetic_word = to_alphabetic(word)
-                if len(alphabetic_word) == 0:
-                    continue
-                try:
-                    word_vectors.append([self.word_to_idx[alphabetic_word]])
-                except KeyError:
-                    # print('An excluded word:', alphabetic_word)
-                    pass
-            self.max_num_words = max(self.max_num_words, len(word_vectors))
-            partial_vectors.append(torch.from_numpy(np.array(word_vectors)).long())
         return partial_vectors
 
     def make_vectors_default(self, path):

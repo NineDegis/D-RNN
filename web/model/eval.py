@@ -1,19 +1,19 @@
-import os
 import sys
 import time
 import glob
 import torch
+import os
 import numpy as np
 from model import RNN
 from config import ConfigRNN
-from embed import *
+from embed import Embed
 
 POSITIVE = "POS"
 NEGATIVE = "NEG"
 
 
 class Evaluator(object):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device_name = "cuda" if torch.cuda.is_available() else "cpu"
     checkpoint_folder = "checkpoints"
 
     def __init__(self, model, optimizer):
@@ -30,7 +30,7 @@ class Evaluator(object):
             return {}
         file_name = file_names[-1]  # Pick the most recent file.
         print("[+] Checkpoint Loaded. '{}'".format(file_name))
-        return torch.load(file_name)
+        return torch.load(file_name, map_location=self.device_name)
 
     def evaluate(self, batch_size):
         raise NotImplementedError
@@ -52,6 +52,7 @@ class RNNEvaluator(Evaluator):
         checkpoint = self.load_checkpoint()
         try:
             self.optimizer.load_state_dict(checkpoint["optimizer"])
+            # 89527, 100 -> 271, 100
             self.model.load_state_dict(checkpoint["model"])
         except KeyError:
             # There is no checkpoint
@@ -59,8 +60,7 @@ class RNNEvaluator(Evaluator):
 
     def evaluate(self, review_vector):
         with torch.no_grad():
-            review_vector= review_vector.to(self.device)
-
+            review_vector = review_vector.to(torch.device(self.device_name))
             input_data = review_vector.view(-1, 1, 1)  # (num of words / batch size) * batch size * index size(1)
             output, _, _ = self.model(input_data)
             prediction = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
@@ -71,22 +71,23 @@ class RNNEvaluator(Evaluator):
 
 def main():
     config = ConfigRNN.instance()
+    embed = Embed()
     # TODO(kyungsoo): Make this working.
-    embedding_model = get_embedding_model()
-    if config.EMBED_METHOD == "DEFAULT":
+    embedding_model = embed.get_embedding_model()
+    if embedding_model == "DEFAULT":
+        model = RNN()
+    else:
         vectors = embedding_model.wv.vectors
 
         # Add padding for masking.
         vectors = np.append(np.array([100 * [0]]), vectors, axis=0)
         model = RNN(torch.from_numpy(vectors).float())
-    else:
-        model = RNN()
 
     optimizer = torch.optim.SGD(model.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
     trainer = RNNEvaluator(model, optimizer)
 
     # TODO(kyungsoo): Make this working.
-    review_vector = review2vec(sys.argv[0])
+    review_vector = embed.review2vec(sys.argv[0])
     print(trainer.evaluate(review_vector=review_vector))
 
 
