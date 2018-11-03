@@ -158,13 +158,13 @@ def main():
         debug=config.DEBUG_MODE)
     embedding_model = loader.data.embedding_model
     if embedding_model == "DEFAULT":
+        model = RNN()
+    else:
         vectors = loader.data.embedding_model.wv.vectors
 
         # Add padding for masking.
         vectors = np.append(np.array([100 * [0]]), vectors, axis=0)
         model = RNN(torch.from_numpy(vectors).float())
-    else:
-        model = RNN()
 
     optimizer = torch.optim.SGD(model.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
     trainer = RNNTrainer(model, loader, optimizer)

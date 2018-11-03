@@ -2,7 +2,6 @@ import torch.nn as nn
 import torch.autograd
 from torch.autograd import Variable
 from config import ConfigRNN
-from torch.nn.utils.rnn import pack_padded_sequence
 
 
 class RNN(nn.Module):
@@ -10,8 +9,6 @@ class RNN(nn.Module):
 
     def __init__(self, pretrained=None):
         super(RNN, self).__init__()
-        self.cuda_available = torch.cuda.is_available()
-        self.device = torch.device('cuda' if self.cuda_available else 'cpu')
         if pretrained is None:
             self.embed = nn.Embedding(self.config.VOCAB_SIZE, self.config.EMBED_SIZE)
         else:
@@ -29,30 +26,24 @@ class RNN(nn.Module):
         # 워드 인덱스 텐서가 문장 길이가 긴 순서대로 정렬된다.
         input_seq2idx = _inputs[sorted_idx]
 
-        # 문장이 정렬된 순서에 맞게 Target 값도 정렬한다.
-        sorted_target = target[sorted_idx]
-
         # 워드 인덱스 텐서를 원드 벡터 텐서로 변환.
-        embeded = self.embed(input_seq2idx)
-
-        # valid한 hidden을 뽑기 위해 워드 인덱스를 패킹한다.
-        packed_input = pack_padded_sequence(embeded, input_lengths, batch_first=True)
+        embedded = self.embed(input_seq2idx)
 
         # packed_input 으로 뽑아낸 hidden은 padding 을 전부 스킵한다.
-        packed_output, (hidden, cell) = self.lstm(packed_input, (self.init_hidden()))
+        output, (hidden, cell) = self.lstm(embedded, (self.init_hidden()))
 
         # hidden은 output 과 같기 때문에 packed_output을 다시 pad 해서 넣는 것이 아닌, hidden을 넣는다.
-        linear = self.linear(hidden)
+        linear = self.linear(output)
 
         # Soft max.
-        output = self.softmax(linear.squeeze())
+        output = self.softmax(linear[-1])
 
-        return output, hidden, cell, sorted_target
+        return output, hidden, cell
 
     def init_hidden(self):
         hidden = Variable(torch.zeros(1, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
         cell = Variable(torch.zeros(1, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
-        if self.cuda_available:
+        if torch.cuda.is_available():
             hidden = hidden.cuda()
             cell = cell.cuda()
 
