@@ -16,7 +16,6 @@ out/
 # JIRA plugin
 atlassian-ide-plugin.xml
 
-
 # Crashlytics plugin (for Android Studio and IntelliJ)
 com_crashlytics_export_strings.xml
 crashlytics.properties
@@ -30,7 +29,13 @@ __pycache__/
 data/
 
 # Ignore log files
-logs/
+yarn-error.log*
 
 # Ignore checkpoint files.
 checkpoints/
+
+# Ignore rendered css files
+public/css/*
+
+# Ignore sensitive data
+db_config.json
