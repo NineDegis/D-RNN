@@ -19,6 +19,8 @@ class Trainer(object):
         self.optimizer = optimizer
         self.prefix = model.__class__.__name__ + "_"
         self.checkpoint_filename = self.prefix + str(int(time.time())) + ".pt"
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
 
     # TODO(kyungsoo): Make checkpoint for log
     def save_checkpoint(self, checkpoint):
@@ -56,7 +58,7 @@ class RNNTrainer(Trainer):
 
     def __init__(self, model, data_loader, optimizer):
         super().__init__(model, data_loader, optimizer)
-        if self.config.LOGGING_ENABLE:
+        if self.config.BOARD_LOGGING:
             from tensor_board_logger import TensorBoardLogger
             self.logger = TensorBoardLogger(os.path.join("logs", model.__class__.__name__))
 
@@ -64,13 +66,11 @@ class RNNTrainer(Trainer):
 
     def train(self, max_epoch):
         print("Training started")
-        if torch.cuda.is_available():
-            self.model = self.model.cuda()
 
         # Set model to train mode.
         self.model.train()
         epoch_resume = 0
-        if self.config.CHECKPOINT_ENABLE:
+        if self.config.SAVE_CHECKPOINT:
             checkpoint = self.load_checkpoint()
             try:
                 epoch_resume = checkpoint["epoch"]
@@ -104,7 +104,7 @@ class RNNTrainer(Trainer):
                 accuracy = self.get_accuracy(sorted_target, output)
                 accuracy_sum += accuracy
                 loss_sum += loss
-            if self.config.LOGGING_ENABLE:
+            if self.config.BOARD_LOGGING:
                 if len(self.data_loader) == 0:
                     raise Exception("Data size is smaller than batch size.")
                 loss_avg = loss_sum / len(self.data_loader)
@@ -123,7 +123,7 @@ class RNNTrainer(Trainer):
 
         # Set model to eval mode.
         self.model.eval()
-        if self.config.CHECKPOINT_ENABLE:
+        if self.config.SAVE_CHECKPOINT:
             checkpoint = self.load_checkpoint()
             try:
                 self.optimizer.load_state_dict(checkpoint["optimizer"])
@@ -146,7 +146,7 @@ class RNNTrainer(Trainer):
                 _, argmax = torch.max(output, 1)
                 correct += (sorted_target == argmax.squeeze()).nonzero().size(0) / 2
 
-        print('\nTest set: Accuracy: {}/{} ({:.0f}%)\n'.format(correct / len(self.data_loader.dataset)))
+        print('\nAccuracy: {:.0f}%\n'.format(correct / len(self.data_loader.dataset)))
         print("End")
 
 
@@ -156,7 +156,7 @@ def main():
         batch_size=config.BATCH_SIZE,
         embed_method=config.EMBED_METHOD,
         is_eval=config.EVAL_MODE,
-        debug=config.DEBUG_MODE)
+        debug=config.CONSOLE_LOGGING)
     embedding_model = loader.data.embedding_model
     if embedding_model == "DEFAULT":
         model = RNN()
@@ -169,7 +169,10 @@ def main():
 
     optimizer = torch.optim.SGD(model.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
     trainer = RNNTrainer(model, loader, optimizer)
-    trainer.train(config.MAX_EPOCH)
+    if config.EVAL_MODE:
+        trainer.evaluate()
+    else:
+        trainer.train(config.MAX_EPOCH)
 
 
 if __name__ == "__main__":
