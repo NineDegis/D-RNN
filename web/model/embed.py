@@ -17,7 +17,7 @@ def to_alphabetic(word):
 
 class Embed:
     embed_model_path = "embedmodel"
-    embed_model_name = "embed_model.pickle"
+    embed_model_name = "embed_model.wv"
     config = ConfigRNN.instance()
     embedding_model = None
 
@@ -29,6 +29,14 @@ class Embed:
         except FileExistsError:
             pass
         words = self.embedding_model.wv.index2entity
+
+        vectors = np.append(np.array([100 * [0]]), self.embedding_model.wv.vectors, axis=0)
+        print(vectors.size)
+
+        print(words[1])
+        print(self.embedding_model.wv.similarity('he', 'she'))
+        print(self.embedding_model.most_similar(positive=['scary'], topn=10))
+
         self.word_to_idx = {words[i]: i for i in range(0, len(words))}
 
     def get_embedding_model(self):

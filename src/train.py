@@ -80,8 +80,6 @@ class RNNTrainer(Trainer):
                 # There is no checkpoint
                 pass
         for epoch in range(epoch_resume, max_epoch):
-            accuracy_sum = 0
-            loss_sum = 0
             self.current_epoch = epoch
             for batch_idx, (_data, target) in enumerate(self.data_loader):
                 # Transpose vector to make it (num of words / batch size) * batch size * index size(1).
@@ -102,15 +100,11 @@ class RNNTrainer(Trainer):
                     print("target : ", target)
                     print("output : ", output, end="\n\n")
                 accuracy = self.get_accuracy(sorted_target, output)
-                accuracy_sum += accuracy
-                loss_sum += loss
             if self.config.BOARD_LOGGING:
                 if len(self.data_loader) == 0:
                     raise Exception("Data size is smaller than batch size.")
-                loss_avg = loss_sum / len(self.data_loader)
-                accuracy_avg = accuracy_sum / len(self.data_loader)
                 # TODO(kyungsoo): Make Tensorboard automatically execute when train.py runs if it is possible
-                self.logger.log(loss_avg, accuracy_avg, self.model.named_parameters(), self.current_epoch)
+                self.logger.log(loss.item(), accuracy, self.model.named_parameters(), self.current_epoch)
                 self.save_checkpoint({
                     "epoch": epoch + 1,
                     "model": self.model.state_dict(),
@@ -161,9 +155,7 @@ def main():
 
     # TODO(hyungsun): This code is temporal. Erase this later.
     if config.SAVE_EMBED_MODEL:
-        import pickle
-        with open("embed_model.pickle", 'wb') as f:
-            pickle.dump(embedding_model, f, pickle.HIGHEST_PROTOCOL)
+        embedding_model.save("embed_model.wv")
         return
     if embedding_model == "DEFAULT":
         model = RNN()
