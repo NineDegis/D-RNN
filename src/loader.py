@@ -37,8 +37,3 @@ class ACLIMDB(BaseData):
             shuffle=self.config.SHUFFLE,
             drop_last=True,
             **additional_options)
-
-
-if __name__ == '__main__':
-    # TODO(hyungsun): Remove.
-    ACLIMDB(5, 'CBOW', False, True).load()

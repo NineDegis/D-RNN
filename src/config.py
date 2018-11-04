@@ -34,9 +34,9 @@ class ConfigRNN(ConstSingleton):
         # [Model]
         self.BI_DIRECTION = True
         self.HIDDEN_SIZE = 200
-        self.OUTPUT_SIZE = 2  # output is one of pos([1, 0]) and neg([0, 1]).
+        self.OUTPUT_SIZE = 2            # output is one of pos([1, 0]) and neg([0, 1]).
         self.BATCH_SIZE = 32
-        self.VOCAB_SIZE = 89527  # It is only used when the `EMBED_METHOD` is "DEFAULT"
+        self.VOCAB_SIZE = 89527         # It is only used when the `EMBED_METHOD` is "DEFAULT"
 
         # [Data]
         self.PAD_WORD = "<PAD>"
@@ -46,6 +46,7 @@ class ConfigRNN(ConstSingleton):
         self.SHUFFLE = True
 
         # [ETC]
-        self.DEBUG_MODE = True
-        self.LOGGING_ENABLE = False
-        self.CHECKPOINT_ENABLE = False
+        self.CONSOLE_LOGGING = False        # Just logging in console.
+        self.BOARD_LOGGING = False          # Enable Tensor-board logging.
+        self.SAVE_CHECKPOINT = False        # Save model to checkpoints.
+        self.EVAL_MODE = True               # Use eval data to test model.

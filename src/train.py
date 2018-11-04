@@ -154,7 +154,7 @@ def main():
     loader = ACLIMDB(
         batch_size=config.BATCH_SIZE,
         embed_method=config.EMBED_METHOD,
-        is_eval=False,
+        is_eval=config.EVAL_MODE,
         debug=config.DEBUG_MODE)
     embedding_model = loader.data.embedding_model
     if embedding_model == "DEFAULT":
