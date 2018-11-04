@@ -8,7 +8,7 @@
         <option value="actor">actor</option>
       </select>
       <input type="text" />
-    </div>
+    </div> <!-- search-bar -->
     <div class="sort-bar">
       <span>Sort by</span>
       <select title="movie-sort">
@@ -17,12 +17,33 @@
         <option value="title-desc">title(desc)</option>
         <option value="title-asc">title(asc)</option>
       </select>
+    </div> <!-- sort-bar -->
+  </div> <!-- find-helpers -->
+  <div class="movie-infos">
+    <% for(var i=0; i < movies.length; i++) { %>
+    <div class="movie-info">
+      <div>
+        <img src="<%= movies[i].post_url %>" alt="<%= movies[i].title %>" />
+        <h3><%= movies[i].title %></h3>
+        <span><%= movies[i].genre %></span>
+        <span><%= movies[i].play_time %></span>
+      </div>
     </div>
-    <div class="movies">
-      <%= movies %>
+    <% } %>
+  </div> <!-- movie-infos -->
+  <div class="movie-details">
+    <% for(var i=0; i < movies.length; i++) { %>
+    <div class="movie-detail">
+      <img src="<%= movies[i].post_url %>" alt="<%= movies[i].title %>" />
+      <div>
+        <h2><%= movies[i].title %></h2>
+        <span><%= movies[i].genre %></span>
+        <span><%= movies[i].play_time %></span>
+      </div>
     </div>
-    <div class="pages">
-      << < 1 2 3 > >>
-    </div>
-  </div>
-</div>
+    <% } %>
+  </div> <!-- movie-detail -->
+</div> <!-- content -->
+<script type="text/javascript" src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+<script type="text/javascript" src="js/scripts.js"></script>
