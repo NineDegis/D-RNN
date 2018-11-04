@@ -38,10 +38,10 @@ class Trainer(object):
         print("[+] Checkpoint Loaded. '{}'".format(file_name))
         return torch.load(file_name)
 
-    def train(self, max_epoch, batch_size):
+    def train(self, max_epoch):
         raise NotImplementedError
 
-    def evaluate(self, batch_size):
+    def evaluate(self):
         raise NotImplementedError
 
     @staticmethod
@@ -62,7 +62,7 @@ class RNNTrainer(Trainer):
 
         self.current_epoch = 0
 
-    def train(self, max_epoch, batch_size):
+    def train(self, max_epoch):
         print("Training started")
         if torch.cuda.is_available():
             self.model = self.model.cuda()
@@ -118,7 +118,7 @@ class RNNTrainer(Trainer):
                 })
         print("End")
 
-    def evaluate(self, batch_size):
+    def evaluate(self):
         print("Evaluation started")
 
         # Set model to eval mode.
@@ -132,20 +132,21 @@ class RNNTrainer(Trainer):
                 # There is no checkpoint
                 pass
 
-        test_loss = 0
         correct = 0
         with torch.no_grad():
             for _data, target in self.data_loader:
-                _data, target = _data.to(self.device), target.to(self.device)
-                input_data = _data.view(-1, batch_size, 1)  # (num of words / batch size) * batch size * index size(1)
-                output, _, _ = self.model(input_data)
-                test_loss += self.config.CRITERION(output, target).item()  # sum up batch loss
-                prediction = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
-                correct += prediction.eq(target.view_as(prediction)).sum().item()
-        test_loss /= len(self.data_loader.dataset)
-        print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-            test_loss, correct, len(self.data_loader.dataset),
-            100. * correct / len(self.data_loader.dataset)))
+                # Transpose vector to make it (num of words / batch size) * batch size * index size(1).
+                _data = np.transpose(_data, (1, 0, 2))
+                _data, target = _data.to(device=self.device), target.to(device=self.device)
+
+                # Initialize the gradient of model
+                self.optimizer.zero_grad()
+                output, hidden, cell, sorted_target = self.model(_data, target)
+
+                _, argmax = torch.max(output, 1)
+                correct += (sorted_target == argmax.squeeze()).nonzero().size(0) / 2
+
+        print('\nTest set: Accuracy: {}/{} ({:.0f}%)\n'.format(correct / len(self.data_loader.dataset)))
         print("End")
 
 
@@ -168,7 +169,7 @@ def main():
 
     optimizer = torch.optim.SGD(model.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
     trainer = RNNTrainer(model, loader, optimizer)
-    trainer.train(config.MAX_EPOCH, config.BATCH_SIZE)
+    trainer.train(config.MAX_EPOCH)
 
 
 if __name__ == "__main__":
