@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.autograd
+import torch.nn.functional as F
 from torch.autograd import Variable
 from config import ConfigRNN
 from torch.nn.utils.rnn import pack_padded_sequence
@@ -18,9 +19,9 @@ class RNN(nn.Module):
             self.embed = nn.Embedding(self.config.VOCAB_SIZE, self.config.EMBED_SIZE)
         else:
             self.embed = nn.Embedding.from_pretrained(pretrained)
-        self.lstm = nn.LSTM(self.config.EMBED_SIZE, self.config.HIDDEN_SIZE)
-        self.linear = nn.Linear(self.config.HIDDEN_SIZE, 128)
-        self.linear2 = nn.Linear(128, self.config.OUTPUT_SIZE)
+        self.lstm = nn.LSTM(self.config.EMBED_SIZE, self.config.HIDDEN_SIZE, num_layers=2, dropout=0.7)
+        self.fc1 = nn.Linear(self.config.HIDDEN_SIZE, 64)
+        self.fc2 = nn.Linear(64, self.config.OUTPUT_SIZE)
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, inputs, target):
@@ -45,8 +46,9 @@ class RNN(nn.Module):
         packed_output, (hidden, cell) = self.lstm(packed_input, (self.init_hidden()))
 
         # hidden은 output 과 같기 때문에 packed_output을 다시 pad 해서 넣는 것이 아닌, hidden을 넣는다.
-        linear = self.linear(hidden)
-        linear = self.linear2(linear)
+        linear = F.relu(self.fc1(hidden[1]))
+        linear = F.dropout(linear, training=not self.config.EVAL_MODE)
+        linear = self.fc2(linear)
 
         # Soft max.
         output = self.softmax(linear.squeeze())
@@ -54,8 +56,8 @@ class RNN(nn.Module):
         return output, hidden, cell, sorted_target
     
     def init_hidden(self):
-        hidden = Variable(torch.zeros(1, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
-        cell = Variable(torch.zeros(1, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
+        hidden = Variable(torch.zeros(2, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
+        cell = Variable(torch.zeros(2, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
         if self.cuda_available:
             hidden = hidden.cuda()
             cell = cell.cuda()

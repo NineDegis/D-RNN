@@ -12,7 +12,7 @@ from nltk import word_tokenize
 
 warnings.filterwarnings(action='ignore', category=UserWarning, module='gensim')
 
-TEST_DATA_SIZE = 10
+TEST_DATA_SIZE = 30
 
 
 def pad_sequence(sequences, max_len, batch_first=False, padding_value=0):
@@ -119,8 +119,11 @@ class Imdb(data.Dataset):
             )
             words = self.embedding_model.wv.index2entity
 
-            # Insert pre-defined padding word to mask while training.
-            words.insert(0, self.config.PAD_WORD)
+            if not self.config.SAVE_EMBED_MODEL:
+                # Insert pre-defined padding word to mask while training.
+                words.insert(0, self.config.PAD_WORD)
+            else:
+                print(self.embedding_model.wv.similarity('woman', 'man'))
 
         self.word_to_idx = {words[i]: i for i in range(0, len(words))}
 

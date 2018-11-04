@@ -27,8 +27,8 @@ class ConfigRNN(ConstSingleton):
     def __init__(self):
         # [Train]
         self.LEARNING_RATE = 0.01
-        self.MAX_EPOCH = 500
-        self.WEIGHT_DECAY = 0.0003
+        self.MAX_EPOCH = 2000
+        self.WEIGHT_DECAY = 0.03
         self.CRITERION = torch.nn.CrossEntropyLoss()
 
         # [Model]
@@ -47,7 +47,7 @@ class ConfigRNN(ConstSingleton):
 
         # [ETC]
         # Just logging in console.
-        self.CONSOLE_LOGGING = False
+        self.CONSOLE_LOGGING = True
         # Enable Tensor-board logging.
         self.BOARD_LOGGING = False
         # Save model to checkpoints.
