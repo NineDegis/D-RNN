@@ -23,7 +23,6 @@
     "sass": "rm -r public/css > /dev/null; node-sass public/sass --output-style compressed --output public/css",
     "test": "yarn sass; babel-node index.js test",
     "start": "yarn sass; babel-node index.js start",
-
     "db-test": "babel-node database.js"
   }
 }

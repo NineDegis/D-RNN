@@ -17,12 +17,12 @@ $title-font: 14px #{GoyangDeokyangB}, #{"Bitstream Vera Sans Mono"}, #{"Lucida G
 $nav-height: 2.5em
 
 body
-  background-color: black
+  background-color: $primary-bg-color
   width: 100%
   margin: 0
   padding: 0
 
-p
+h1, h2, h3, h4, h5, h6, p
   margin: 0
 
 select
@@ -35,6 +35,26 @@ input
   background-color: transparent
   border-color: transparent
   border-bottom-color: azure
+
+/* slick */
+.slick-arrow
+  font-size: 1.5em
+  line-height: 0
+  position: absolute
+  top: 0
+  display: block
+  width: 30px
+  height: 100%
+  padding: 0
+  cursor: pointer
+  color: #757575
+  border: none
+  outline: none
+  background: #ffffff
+  opacity: 0.8
+  z-index: 1
+.slick-next
+  right: 0
 
 .nav
   font: $menu-font
@@ -73,3 +93,28 @@ input
       margin-top: calc((#{$sort-bar-height} - 1em) / 2)
       select
         width: 10em
+  .movie-infos
+    margin: 20px 0
+    $movie-info-poster-width: 150px
+    .movie-info
+      width: $movie-info-poster-width
+      height: unset
+      div
+        width: $movie-info-poster-width
+        margin: 0 auto
+        img
+          width: $movie-info-poster-width
+  .movie-details
+    width: 100%
+    margin: 40px 10% 0 10%
+    .movie-detail
+      text-align: center
+      img
+        float: left
+        width: 300px
+        display: inline-block
+      div
+        float: left
+        display: inline-block
+        text-align: left
+        margin-left: 40px
