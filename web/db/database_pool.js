@@ -1,4 +1,4 @@
-import mysql from 'mysql';
+import mysql from 'promise-mysql';
 
 class DatabasePool {
   constructor() {
@@ -25,15 +25,6 @@ class DatabasePool {
       user: dbConfig.user,
       password: dbConfig.password,
       database: dbConfig.database,
-    });
-  }
-
-  makeQuery(querySentence, callback) {
-    pool.query(querySentence, (error, results, fields) => {
-      if (error) console.log(error);
-      else {
-        callback();
-      }
     });
   }
 }
