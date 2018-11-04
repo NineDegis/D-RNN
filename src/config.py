@@ -26,14 +26,14 @@ class ConfigRNN(ConstSingleton):
 
     def __init__(self):
         # [Train]
-        self.LEARNING_RATE = 0.1
-        self.MAX_EPOCH = 3000
+        self.LEARNING_RATE = 0.01
+        self.MAX_EPOCH = 500
         self.WEIGHT_DECAY = 0.0003
         self.CRITERION = torch.nn.CrossEntropyLoss()
 
         # [Model]
         self.BI_DIRECTION = True
-        self.HIDDEN_SIZE = 200
+        self.HIDDEN_SIZE = 512
         self.OUTPUT_SIZE = 2            # output is one of pos([1, 0]) and neg([0, 1]).
         self.BATCH_SIZE = 32
         self.VOCAB_SIZE = 89527         # It is only used when the `EMBED_METHOD` is "DEFAULT"
@@ -50,3 +50,5 @@ class ConfigRNN(ConstSingleton):
         self.BOARD_LOGGING = False          # Enable Tensor-board logging.
         self.SAVE_CHECKPOINT = False        # Save model to checkpoints.
         self.EVAL_MODE = True               # Use eval data to test model.
+        self.SAVE_EMBED_MODEL = True        # Save embed model for deploy.
+

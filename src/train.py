@@ -123,14 +123,13 @@ class RNNTrainer(Trainer):
 
         # Set model to eval mode.
         self.model.eval()
-        if self.config.SAVE_CHECKPOINT:
-            checkpoint = self.load_checkpoint()
-            try:
-                self.optimizer.load_state_dict(checkpoint["optimizer"])
-                self.model.load_state_dict(checkpoint["model"])
-            except KeyError:
-                # There is no checkpoint
-                pass
+        checkpoint = self.load_checkpoint()
+        try:
+            self.optimizer.load_state_dict(checkpoint["optimizer"])
+            self.model.load_state_dict(checkpoint["model"])
+        except KeyError:
+            raise RuntimeException("No checkpoint to evaluate.")
+            pass
 
         correct = 0
         with torch.no_grad():
@@ -144,9 +143,10 @@ class RNNTrainer(Trainer):
                 output, hidden, cell, sorted_target = self.model(_data, target)
 
                 _, argmax = torch.max(output, 1)
-                correct += (sorted_target == argmax.squeeze()).nonzero().size(0) / 2
+                correct += (sorted_target == argmax.squeeze()).nonzero().size(0)
 
-        print('\nAccuracy: {:.0f}%\n'.format(correct / len(self.data_loader.dataset)))
+        size = len(self.data_loader.dataset)
+        print('\nAccuracy: {}/{} ({:.2f})%\n'.format(correct, size, 100. * correct / size))
         print("End")
 
 
@@ -157,7 +157,14 @@ def main():
         embed_method=config.EMBED_METHOD,
         is_eval=config.EVAL_MODE,
         debug=config.CONSOLE_LOGGING)
-    embedding_model = loader.data.embedding_model
+    embedding_model = loader.data.embedding_model 
+
+    # TODO(hyungsun): This code is temporal. Erase this later.
+    if config.SAVE_EMBED_MODEL:
+        import pickle
+        with open("embed_model.pickle", 'wb') as f:
+            pickle.dump(embedding_model, f, pickle.HIGHEST_PROTOCOL)
+        return
     if embedding_model == "DEFAULT":
         model = RNN()
     else:

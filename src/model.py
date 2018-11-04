@@ -19,7 +19,8 @@ class RNN(nn.Module):
         else:
             self.embed = nn.Embedding.from_pretrained(pretrained)
         self.lstm = nn.LSTM(self.config.EMBED_SIZE, self.config.HIDDEN_SIZE)
-        self.linear = nn.Linear(self.config.HIDDEN_SIZE, self.config.OUTPUT_SIZE)
+        self.linear = nn.Linear(self.config.HIDDEN_SIZE, 128)
+        self.linear2 = nn.Linear(128, self.config.OUTPUT_SIZE)
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, inputs, target):
@@ -45,6 +46,7 @@ class RNN(nn.Module):
 
         # hidden은 output 과 같기 때문에 packed_output을 다시 pad 해서 넣는 것이 아닌, hidden을 넣는다.
         linear = self.linear(hidden)
+        linear = self.linear2(linear)
 
         # Soft max.
         output = self.softmax(linear.squeeze())
