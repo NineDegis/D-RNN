@@ -46,9 +46,14 @@ class ConfigRNN(ConstSingleton):
         self.SHUFFLE = True
 
         # [ETC]
-        self.CONSOLE_LOGGING = False        # Just logging in console.
-        self.BOARD_LOGGING = False          # Enable Tensor-board logging.
-        self.SAVE_CHECKPOINT = False        # Save model to checkpoints.
-        self.EVAL_MODE = True               # Use eval data to test model.
-        self.SAVE_EMBED_MODEL = True        # Save embed model for deploy.
+        # Just logging in console.
+        self.CONSOLE_LOGGING = False
+        # Enable Tensor-board logging.
+        self.BOARD_LOGGING = False
+        # Save model to checkpoints.
+        self.SAVE_CHECKPOINT = False
+        # Use eval data to test model.
+        self.EVAL_MODE = False
+        # Save embed model for deploy.
+        self.SAVE_EMBED_MODEL = False
 

@@ -17,7 +17,7 @@ def to_alphabetic(word):
 
 class Embed:
     embed_model_path = "embedmodel"
-    embed_model_name = "model.wv"
+    embed_model_name = "embed_model.pickle"
     config = ConfigRNN.instance()
     embedding_model = None
 

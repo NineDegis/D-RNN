@@ -94,7 +94,7 @@ class RNNTrainer(Trainer):
                 loss = self.config.CRITERION(output, sorted_target)
                 loss.backward()
                 self.optimizer.step()
-                if self.config.DEBUG_MODE:
+                if self.config.CONSOLE_LOGGING:
                     print("Train Epoch: {}/{} [{}/{} ({:.0f}%)]".format(
                         epoch, max_epoch, batch_idx * _data.shape[1],
                         len(self.data_loader.dataset), 100. * batch_idx / len(self.data_loader)))
@@ -128,7 +128,7 @@ class RNNTrainer(Trainer):
             self.optimizer.load_state_dict(checkpoint["optimizer"])
             self.model.load_state_dict(checkpoint["model"])
         except KeyError:
-            raise RuntimeException("No checkpoint to evaluate.")
+            raise Exception("No checkpoint to evaluate.")
             pass
 
         correct = 0
