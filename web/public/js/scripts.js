@@ -1,3 +1,5 @@
+/* functions for slick */
+
 var calculateSlidesToShow = function () {
   var posterSize = 150;
   var marginSize = 5;
@@ -7,6 +9,7 @@ var calculateSlidesToShow = function () {
   return maxSlidesToShow;
 };
 
+// TODO(sejin): Make this function more flexible
 var resetSlick = function (className) {
   $(className).slick('unslick');
   $(className).slick({
@@ -21,8 +24,6 @@ var resetSlick = function (className) {
   $('.slick-next').html('>');
 };
 
-// TODO(Sejin): Make slick to adjust `slidesToShow` automatically with the window size.
-// https://github.com/kenwheeler/slick/issues/1071#issuecomment-402330919
 $(document).ready(function () {
   $('.movie-details').slick({
     slidesToShow: 1,
@@ -41,7 +42,44 @@ $(document).ready(function () {
   });
   $('.slick-prev').html('<');
   $('.slick-next').html('>');
+  const movieID = $('.movie-detail')[0].id;
+  fetchReviews(movieID, 0);
 });
 $(window).resize(function () {
   resetSlick('.movie-infos');
+});
+
+
+
+/* functions for ajax call */
+var fetchReviews = function(movieID, currentSlide) {
+  $.ajax({
+    url: '/reviews?id=' + movieID,
+    success: function (reviewList) {
+      var reviewsElem = $(`.movie-detail:eq(${currentSlide}) .reviews`);
+      console.log(reviewsElem);
+      var numComments = reviewList.length;
+      if (numComments === 0) {
+        reviewsElem.html("<p class='no-data'> There is no reviews for this movie :( </p>");
+        return;
+      }
+      reviewsElem.html("");
+      for (var i = 0; i < numComments; i++) {
+        reviewsElem.append(
+          "<div>" +
+          "<p class='datetime'>" +
+          reviewList[i].review_datetime +
+          "</p>" +
+          "<p class='comment'>" +
+          reviewList[i].comment +
+          "</p></div>"
+        );
+      }
+    }
+  });
+};
+
+$('.movie-details').on('afterChange', function(event, slick, currentSlide, nextSlide) {
+  const movieID = $('.movie-detail')[currentSlide].id;
+  fetchReviews(movieID, currentSlide);
 });

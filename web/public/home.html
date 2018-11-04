@@ -18,32 +18,48 @@
         <option value="title-asc">title(asc)</option>
       </select>
     </div> <!-- sort-bar -->
-  </div> <!-- find-helpers -->
+  </div> <!-- find-db -->
   <div class="movie-infos">
-    <% for(var i=0; i < movies.length; i++) { %>
+    <% for(var i=0; i < movieList.length; i++) { %>
     <div class="movie-info">
       <div>
-        <img src="<%= movies[i].post_url %>" alt="<%= movies[i].title %>" />
-        <h3><%= movies[i].title %></h3>
-        <span><%= movies[i].genre %></span>
-        <span><%= movies[i].play_time %></span>
+        <img src="<%= movieList[i].post_url %>" alt="<%= movieList[i].title %>" />
+        <h3><%= movieList[i].title %></h3>
+        <span><%= movieList[i].main_genre %></span>
+        <span><%= movieList[i].play_time %></span>
       </div>
     </div>
     <% } %>
   </div> <!-- movie-infos -->
   <div class="movie-details">
-    <% for(var i=0; i < movies.length; i++) { %>
-    <div class="movie-detail">
-      <img src="<%= movies[i].post_url %>" alt="<%= movies[i].title %>" />
-      <div>
-        <h2><%= movies[i].title %></h2>
-        <span><%= movies[i].genre %></span>
-        <span><%= movies[i].play_time %></span>
+    <% for(var i=0; i < movieList.length; i++) { %>
+    <div id="<%= movieList[i].movie_id %>" class="movie-detail">
+      <div class="movie-detail-movie">
+        <table>
+          <tbody>
+          <tr>
+            <td>
+              <img src="<%= movieList[i].post_url %>" alt="<%= movieList[i].title %>" />
+            </td>
+            <td>
+              <div>
+                <h1><%= movieList[i].title %></h1>
+                <p class="sub-info"><%= movieList[i].play_time %> | <%= movieList[i].release_year %> | <%= movieList[i].genre %></p>
+                <p><%= movieList[i].description %></p>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div> <!-- movie-detail-movie -->
+      <div class="reviews">
+        <p>Loading...</p>
       </div>
-    </div>
+    </div> <!-- movie-detail -->
     <% } %>
-  </div> <!-- movie-detail -->
+  </div> <!-- movie-details -->
 </div> <!-- content -->
 <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
 <script type="text/javascript" src="js/scripts.js"></script>
