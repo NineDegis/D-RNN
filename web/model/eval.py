@@ -3,22 +3,17 @@ import time
 import glob
 import torch
 import os
-import numpy as np
-from model import RNN
+from model import ReviewParser
 from config import ConfigRNN
 from embed import Embed
-
-POSITIVE = "POS"
-NEGATIVE = "NEG"
 
 
 class Evaluator(object):
     device_name = "cuda" if torch.cuda.is_available() else "cpu"
     checkpoint_folder = "checkpoints"
 
-    def __init__(self, model, optimizer):
+    def __init__(self, model):
         self.model = model
-        self.optimizer = optimizer
         self.prefix = model.__class__.__name__ + "_"
         self.checkpoint_filename = self.prefix + str(int(time.time())) + ".pt"
 
@@ -39,56 +34,54 @@ class Evaluator(object):
 class RNNEvaluator(Evaluator):
     config = ConfigRNN.instance()
 
-    def __init__(self, model, optimizer):
-        super().__init__(model, optimizer)
-        if self.config.LOGGING_ENABLE:
-            from tensor_board_logger import TensorBoardLogger
-            self.logger = TensorBoardLogger(os.path.join("logs", model.__class__.__name__))
-
+    def __init__(self, model):
+        super().__init__(model)
         self.current_epoch = 0
-        self.model.eval()
+        # self.model.eval()
 
         # Load model & optimizer.
         checkpoint = self.load_checkpoint()
         try:
-            self.optimizer.load_state_dict(checkpoint["optimizer"])
-            # 89527, 100 -> 271, 100
             self.model.load_state_dict(checkpoint["model"])
         except KeyError:
             # There is no checkpoint
             pass
 
-    def evaluate(self, review_vector):
+    def evaluate(self, review_vectors):
         with torch.no_grad():
-            review_vector = review_vector.to(torch.device(self.device_name))
-            input_data = review_vector.view(-1, 1, 1)  # (num of words / batch size) * batch size * index size(1)
-            output, _, _ = self.model(input_data)
-            prediction = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
-        if prediction.eq(torch.tensor([1, 0])):
-            return POSITIVE
-        return NEGATIVE
+            for review_vector in review_vectors:
+                input_data = review_vector.to(torch.device(self.device_name))
+                return self.model(input_data)
+
+
+def prepare():
+    config = ConfigRNN.instance()
+    embed = Embed()
+    embedding_model = embed.get_embedding_model()
+    if config.EMBED_METHOD == "DEFAULT":
+        model = ReviewParser()
+    else:
+        model = ReviewParser(pretrained=torch.from_numpy(embedding_model.wv.vectors).float())
+    evaluator = RNNEvaluator(model)
+    return evaluator, embed
 
 
 def main():
-    config = ConfigRNN.instance()
-    embed = Embed()
-    # TODO(kyungsoo): Make this working.
-    embedding_model = embed.get_embedding_model()
-    if embedding_model == "DEFAULT":
-        model = RNN()
-    else:
-        vectors = embedding_model.wv.vectors
+    evaluator, embed = prepare()
+    review_vector = embed.review2vec(sys.argv[1])
+    print(evaluator.evaluate(review_vector))
 
-        # Add padding for masking.
-        vectors = np.append(np.array([100 * [0]]), vectors, axis=0)
-        model = RNN(torch.from_numpy(vectors).float())
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
-    trainer = RNNEvaluator(model, optimizer)
+def test():
+    evaluator, embed = prepare()
 
-    # TODO(kyungsoo): Make this working.
-    review_vector = embed.review2vec(sys.argv[0])
-    print(trainer.evaluate(review_vector=review_vector))
+    test_review_pos = "I love this movie. This is the best movie I've ever seen."
+    review_vectors = embed.review2vec(test_review_pos)
+    print(evaluator.evaluate(review_vectors=review_vectors))
+
+    test_review_neg = "I hate this movie. This is the worst movie I've ever seen."
+    review_vectors = embed.review2vec(test_review_neg)
+    print(evaluator.evaluate(review_vectors=review_vectors))
 
 
 if __name__ == "__main__":

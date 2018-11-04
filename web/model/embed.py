@@ -37,7 +37,6 @@ class Embed:
     def review2vec(self, review):
         word_vectors = []
         for word in review.split():
-            print(word)
             alphabetic_word = to_alphabetic(word)
             if len(alphabetic_word) == 0:
                 continue
@@ -47,13 +46,3 @@ class Embed:
                 # print('An excluded word:', alphabetic_word)
                 pass
         return torch.from_numpy(np.array([word_vectors])).long()
-
-
-def main():
-    sentence = "I Love movie"
-    embed = Embed()
-    print(embed.review2vec(sentence))
-
-
-if __name__ == '__main__':
-    main()
