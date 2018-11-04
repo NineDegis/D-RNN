@@ -3,7 +3,8 @@ import Koa from 'koa';
 import Router from 'koa-router';
 import render from 'koa-ejs';
 import serve from 'koa-static';
-import home from './api/home';
+import bodyParser from 'koa-bodyparser';
+import homeAPI from './api/homeAPI';
 
 const params = process.argv;
 const testMode = (params[2] === 'test');
@@ -21,9 +22,10 @@ render(app, {
   debug: false,
 });
 
-router.use('/', home.routes());
+router.use('/', homeAPI.routes());
 
 app
+  .use(bodyParser())
   .use(serve(publicPath))
   .use(async (ctx, next) => {
     await next();
