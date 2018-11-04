@@ -3,42 +3,39 @@ import torch.autograd
 from torch.autograd import Variable
 from config import ConfigRNN
 
+POSITIVE = "POS"
+NEGATIVE = "NEG"
 
-class RNN(nn.Module):
+
+class ReviewParser(nn.Module):
     config = ConfigRNN.instance()
 
     def __init__(self, pretrained=None):
-        super(RNN, self).__init__()
+        super().__init__()
         if pretrained is None:
             self.embed = nn.Embedding(self.config.VOCAB_SIZE, self.config.EMBED_SIZE)
         else:
             self.embed = nn.Embedding.from_pretrained(pretrained)
         self.lstm = nn.LSTM(self.config.EMBED_SIZE, self.config.HIDDEN_SIZE)
-        self.linear = nn.Linear(self.config.HIDDEN_SIZE, self.config.OUTPUT_SIZE)
+        self.linear = nn.Linear(self.config.HIDDEN_SIZE, 128)
+        self.linear2 = nn.Linear(128, self.config.OUTPUT_SIZE)
         self.softmax = nn.LogSoftmax(dim=1)
 
-    def forward(self, inputs, target):
-        # 문장 길이를 쉽게 뽑아내기 위해 전처리로 permute 와 squeeze를 한다.
-        _inputs = inputs.permute(1, 0, 2).squeeze(2)
-        input_lengths = torch.LongTensor([torch.max(_inputs[i, :].data.nonzero()) + 1 for i in range(_inputs.size(0))])
-        input_lengths, sorted_idx = input_lengths.sort(0, descending=True)
-
-        # 워드 인덱스 텐서가 문장 길이가 긴 순서대로 정렬된다.
-        input_seq2idx = _inputs[sorted_idx]
-
+    def forward(self, inputs):
         # 워드 인덱스 텐서를 원드 벡터 텐서로 변환.
-        embedded = self.embed(input_seq2idx)
+        embedded = self.embed(inputs)
 
-        # packed_input 으로 뽑아낸 hidden은 padding 을 전부 스킵한다.
-        output, (hidden, cell) = self.lstm(embedded, (self.init_hidden()))
+        output, (_, _) = self.lstm(embedded, (self.init_hidden()))
 
-        # hidden은 output 과 같기 때문에 packed_output을 다시 pad 해서 넣는 것이 아닌, hidden을 넣는다.
         linear = self.linear(output)
+        linear = self.linear2(linear)
 
-        # Soft max.
         output = self.softmax(linear[-1])
-
-        return output, hidden, cell
+        print(output[0])
+        prediction = output[0].max(0)[1]
+        if prediction:
+            return POSITIVE
+        return NEGATIVE
 
     def init_hidden(self):
         hidden = Variable(torch.zeros(1, self.config.BATCH_SIZE, self.config.HIDDEN_SIZE))
