@@ -9,8 +9,8 @@
     "koa-ejs": "^4.1.2",
     "koa-router": "^7.4.0",
     "koa-static": "^5.0.0",
-    "mysql": "^2.16.0",
-    "node-sass": "^4.9.4"
+    "node-sass": "^4.9.4",
+    "promise-mysql": "^3.3.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

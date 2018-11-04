@@ -21,8 +21,7 @@ render(app, {
   debug: false,
 });
 
-router
-  .use('/', home.routes());
+router.use('/', home.routes());
 
 app
   .use(serve(publicPath))
