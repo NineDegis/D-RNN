@@ -54,30 +54,40 @@ input
   background: #ffffff
   opacity: 0.8
   z-index: 1
+
 .slick-next
   right: 0
 
 .nav
+  position: fixed
+  top: 0
+  z-index: 2
   font: $menu-font
   color: $primary-color
   width: 100%
   height: $nav-height
   background-color: $secondary-color
-  .home-logo
-    display: inline-block
-    img
-      height: 100%
-  .nav-items
-    display: inline-block
-    float: right
-    margin-top: calc((#{$nav-height} - 1em) / 2)
-    .nav-item
-      display: inline-block
-      width: 5em
-      text-align: center
+  h2
+    font-size: calc(#{$nav-height} * 1 / 2)
+    text-align: center
+    padding-top: calc(#{$nav-height} / 6)
+
+//.home-logo
+//  display: inline-block
+//  img
+//    height: 100%
+//.nav-items
+//  display: inline-block
+//  float: right
+//  margin-top: calc((#{$nav-height} - 1em) / 2)
+//  .nav-item
+//    display: inline-block
+//    width: 5em
+//    text-align: center
 
 .content
   color: $primary-color
+  $side-margin: 10%
   .find-helpers
     text-align: center
     .search-bar
@@ -107,9 +117,10 @@ input
           width: $movie-info-poster-width
   .movie-details
     width: 100%
+    height: fit-content
     .movie-detail
       table
-        margin: 40px 10% 0 10%
+        margin: 40px $side-margin 0 $side-margin
         width: 80%
         border: none
         color: $primary-color
@@ -127,3 +138,28 @@ input
             .sub-info
               color: $powerless-color
               font-size: 0.9em
+  .review-input
+    $review-input-height: 50px
+    margin: 40px $side-margin
+    .review-textarea
+      width: 88%
+      height: $review-input-height
+      float: left
+      margin-right: 2%
+      font: $content-font
+      ::placeholder
+        color: $powerless-color
+    button
+      width: 10%
+      height: $review-input-height
+  .reviews
+    margin: 10px $side-margin 50px $side-margin
+    .review
+      margin: 20px 0 20px 0
+      .datetime
+        color: $powerless-color
+        font-size: 0.9em
+
+
+
+

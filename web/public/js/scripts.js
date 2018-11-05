@@ -40,7 +40,7 @@ var refreshReviews = function (reviewList) {
   reviewsElem.html("");
   for (var i = 0; i < numComments; i++) {
     reviewsElem.append(
-      "<div>" +
+      "<div class='review'>" +
       "<p class='datetime'>" +
       reviewList[i].review_datetime +
       "</p>" +
